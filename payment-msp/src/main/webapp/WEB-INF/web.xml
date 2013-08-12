@@ -1,0 +1,45 @@
+<!DOCTYPE web-app PUBLIC
+ "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+ "http://java.sun.com/dtd/web-app_2_3.dtd" >
+
+<web-app>
+	<display-name>Payment MSP</display-name>
+
+	<context-param>
+		<param-name>resteasy.scan</param-name>
+		<param-value>false</param-value>
+	</context-param>
+
+	<context-param>
+		<param-name>resteasy.servlet.mapping.prefix</param-name>
+		<param-value>/</param-value>
+	</context-param>
+
+	<context-param>
+		<param-name>resteasy.resources</param-name>
+		<param-value>com.slopeware.bcgames.payment.msp.PaymentMspServiceImpl</param-value>
+	</context-param>
+
+	<context-param>
+		<param-name>resteasy.injector.factory</param-name>
+		<param-value>org.jboss.resteasy.cdi.CdiInjectorFactory</param-value>
+	</context-param>
+
+	<listener>
+		<listener-class>
+			org.jboss.weld.environment.servlet.TomcatListener
+		</listener-class>
+	</listener>
+
+	<servlet>
+		<servlet-name>resteasy-servlet</servlet-name>
+		<servlet-class>
+			org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher
+		</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>resteasy-servlet</servlet-name>
+		<url-pattern>/*</url-pattern>
+	</servlet-mapping>
+</web-app>

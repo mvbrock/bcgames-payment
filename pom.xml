@@ -1,0 +1,57 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.mvbrock.bcgames</groupId>
+	<artifactId>bcgames-payment</artifactId>
+	<packaging>pom</packaging>
+	<version>1.0.0-SNAPSHOT</version>
+	<name>Bitcoin Payment Processing Backend</name>
+
+	<modules>
+		<module>payment-msp</module>
+		<module>payment-callback</module>
+	</modules>
+	
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>1.6</maven.compiler.source>
+		<maven.compiler.target>1.6</maven.compiler.target>
+		
+		<bcgames.common.version>1.0.0-SNAPSHOT</bcgames.common.version>
+		<bcgames.games.fastbutton.version>1.0.0-SNAPSHOT</bcgames.games.fastbutton.version>
+		<bcgames.games.callback.version>1.0.0-SNAPSHOT</bcgames.games.callback.version>
+		<errai.version>2.3.0.Final</errai.version>
+		<gwt.version>2.4.0</gwt.version>
+		<weld.version>1.1.6.Final</weld.version>
+		<gwt.maven.version>2.4.0</gwt.maven.version>
+		<mvel.version>2.1.Beta8</mvel.version>
+		<jetty.version>6.1.25</jetty.version>
+		<slf4j.version>1.6.1</slf4j.version>
+		<uel.impl.version>2.1.2-b04</uel.impl.version>
+		<resteasy.version>2.3.5.Final</resteasy.version>
+		<log4j.version>1.2.17</log4j.version>
+		<jasypt.version>1.9.0</jasypt.version>
+		<jsonrpc4j.version>0.28</jsonrpc4j.version>
+		<junit.version>4.10</junit.version>
+		<servlet-api.version>2.5</servlet-api.version>
+		<jsp-api.version>2.0</jsp-api.version>
+		<jboss-ejb3-api.version>3.1.0</jboss-ejb3-api.version>
+		<cdi-api.version>1.0-SP4</cdi-api.version>
+		<jboss-logging.version>3.0.0.Beta4</jboss-logging.version>
+		<jackson.version>1.9.12</jackson.version>
+	</properties>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
+
