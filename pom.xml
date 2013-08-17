@@ -1,25 +1,25 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.mvbrock.bcgames</groupId>
+	<groupId>org.mvbrock.bcgames.payment</groupId>
 	<artifactId>bcgames-payment</artifactId>
 	<packaging>pom</packaging>
 	<version>1.0.0-SNAPSHOT</version>
 	<name>Bitcoin Payment Processing Backend</name>
 
 	<modules>
-		<module>payment-msp</module>
-		<module>payment-callback</module>
+		<module>payment-model</module>
+		<module>payment-ws-interfaces</module>
+		<module>payment-ws</module>
 	</modules>
 	
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.6</maven.compiler.source>
 		<maven.compiler.target>1.6</maven.compiler.target>
-		
 		<bcgames.common.version>1.0.0-SNAPSHOT</bcgames.common.version>
-		<bcgames.games.fastbutton.version>1.0.0-SNAPSHOT</bcgames.games.fastbutton.version>
-		<bcgames.games.callback.version>1.0.0-SNAPSHOT</bcgames.games.callback.version>
+		<bcgames.payment.ws.interfaces.version>1.0.0-SNAPSHOT</bcgames.payment.ws.interfaces.version>
+		<bcgames.payment.model.version>1.0.0-SNAPSHOT</bcgames.payment.model.version>
 		<errai.version>2.3.0.Final</errai.version>
 		<gwt.version>2.4.0</gwt.version>
 		<weld.version>1.1.6.Final</weld.version>

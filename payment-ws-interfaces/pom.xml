@@ -1,0 +1,40 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.mvbrock.bcgames.payment.ws.interfaces</groupId>
+  <artifactId>payment-ws-interfaces</artifactId>
+  <packaging>jar</packaging>
+  <parent>
+    <groupId>org.mvbrock.bcgames.payment</groupId>
+    <artifactId>bcgames-payment</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+  <name>Payment Web Service Callback</name>
+  <url>http://maven.apache.org</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+	<!-- Payment Model -->
+	<dependency>
+		<groupId>org.mvbrock.bcgames.payment.model</groupId>
+		<artifactId>payment-model</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+	</dependency>
+ 		<!-- RESTEasy -->
+               <dependency>
+                       <groupId>org.jboss.resteasy</groupId>
+                       <artifactId>resteasy-jaxrs</artifactId>
+                       <version>${resteasy.version}</version>
+               </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>3.8.1</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>
