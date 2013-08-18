@@ -1,4 +1,4 @@
-package org.mvbrock.bcgames.payment.interfaces;
+package org.mvbrock.bcgames.payment.ws.interfaces;
 
 import java.util.List;
 

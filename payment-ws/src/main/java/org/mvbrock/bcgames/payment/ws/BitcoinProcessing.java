@@ -11,7 +11,7 @@ import javax.annotation.PreDestroy;
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Inject;
 
-import org.mvbrock.bcgames.payment.interfaces.PaymentMspCallbackService;
+import org.mvbrock.bcgames.payment.ws.interfaces.PaymentMspCallbackService;
 import org.mvbrock.bcgames.payment.model.WagerTier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

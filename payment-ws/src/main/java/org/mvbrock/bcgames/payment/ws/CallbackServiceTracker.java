@@ -7,7 +7,7 @@ import java.util.Map;
 import javax.enterprise.context.ApplicationScoped;
 
 import org.jboss.resteasy.client.ProxyFactory;
-import org.mvbrock.bcgames.payment.interfaces.PaymentMspCallbackService;
+import org.mvbrock.bcgames.payment.ws.interfaces.PaymentMspCallbackService;
 
 
 @ApplicationScoped

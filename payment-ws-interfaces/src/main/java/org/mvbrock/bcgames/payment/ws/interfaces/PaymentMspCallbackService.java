@@ -1,4 +1,4 @@
-package org.mvbrock.bcgames.payment.interfaces;
+package org.mvbrock.bcgames.payment.ws.interfaces;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;

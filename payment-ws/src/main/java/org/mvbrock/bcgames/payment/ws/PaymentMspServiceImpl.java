@@ -10,8 +10,8 @@ import javax.annotation.PostConstruct;
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Inject;
 
-import org.mvbrock.bcgames.payment.interfaces.PaymentMspCallbackService;
-import org.mvbrock.bcgames.payment.interfaces.PaymentMspService;
+import org.mvbrock.bcgames.payment.ws.interfaces.PaymentMspCallbackService;
+import org.mvbrock.bcgames.payment.ws.interfaces.PaymentMspService;
 import org.mvbrock.bcgames.payment.model.Game;
 import org.mvbrock.bcgames.payment.model.GameStatus;
 import org.mvbrock.bcgames.payment.model.GameType;
