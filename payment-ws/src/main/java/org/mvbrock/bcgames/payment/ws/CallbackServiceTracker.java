@@ -7,7 +7,7 @@ import java.util.Map;
 import javax.enterprise.context.ApplicationScoped;
 
 import org.jboss.resteasy.client.ProxyFactory;
-import org.mvbrock.bcgames.payment.ws.interfaces.PaymentMspCallbackService;
+import org.mvbrock.bcgames.payment.ws.interfaces.PaymentWsCallback;
 
 
 @ApplicationScoped
@@ -15,14 +15,14 @@ public class CallbackServiceTracker implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	// Maps a game ID to callback service
-	private Map<String, PaymentMspCallbackService> serviceMap = new HashMap<String, PaymentMspCallbackService>();
+	private Map<String, PaymentWsCallback> serviceMap = new HashMap<String, PaymentWsCallback>();
 	
 	public void addClient(String gameId, String callbackUrl) {
-		PaymentMspCallbackService service = ProxyFactory.create(PaymentMspCallbackService.class, callbackUrl);
+		PaymentWsCallback service = ProxyFactory.create(PaymentWsCallback.class, callbackUrl);
 		serviceMap.put(gameId, service);
 	}
 	
-	public PaymentMspCallbackService getService(String gameId) {
+	public PaymentWsCallback getService(String gameId) {
 		return serviceMap.get(gameId);
 	}
 }

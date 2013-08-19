@@ -23,7 +23,7 @@ public class BitcoinController implements Serializable {
 	private BitcoinProcessing bcProcessing;
 	
 	@Inject
-	private PaymentMspConfigStore config;
+	private PaymentWsConfigStore config;
 	
 	public BitcoinController() { }
 
@@ -35,7 +35,7 @@ public class BitcoinController implements Serializable {
 		// Initialize the payout with the original incoming amount from the player
 		Double payout = winningLedger.getIncomingAmount();
 		
-		for(Player loser : game.getLosers()) {
+		for(Player loser : game.getLoserCollection()) {
 			// Retrieve the losing ledger
 			String loserGameAddress = loser.getGameAddress();
 			GameLedger losingLedger = bcProcessing.getLedger(loserGameAddress);

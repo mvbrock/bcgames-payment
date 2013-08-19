@@ -11,7 +11,7 @@ import javax.annotation.PreDestroy;
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Inject;
 
-import org.mvbrock.bcgames.payment.ws.interfaces.PaymentMspCallbackService;
+import org.mvbrock.bcgames.payment.ws.interfaces.PaymentWsCallback;
 import org.mvbrock.bcgames.payment.model.WagerTier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +34,7 @@ public class BitcoinProcessing implements Runnable, Serializable {
 	private Thread thread;
 	
 	@Inject
-	private PaymentMspConfigStore config;
+	private PaymentWsConfigStore config;
 	
 	@Inject
 	private CallbackServiceTracker finderServices;
@@ -66,9 +66,9 @@ public class BitcoinProcessing implements Runnable, Serializable {
 	}
 	
 	public void run() {
-		final Integer pollInterval = Integer.decode(config.getProperty(PaymentMspConfigStore.BitcoinPollInterval));
+		final Integer pollInterval = Integer.decode(config.getProperty(PaymentWsConfigStore.BitcoinPollInterval));
 		log.info("Bitcoin client polling interval: " +
-				config.getProperty(PaymentMspConfigStore.BitcoinPollInterval));
+				config.getProperty(PaymentWsConfigStore.BitcoinPollInterval));
 		
 		log.info("Starting Bitcoin processing thread");
 		while(isRunning.get() == true) {
@@ -177,7 +177,7 @@ public class BitcoinProcessing implements Runnable, Serializable {
 				log.info("Received correct amount from player.");
 				
 				// Provide update to the WS client
-				PaymentMspCallbackService callbackSvc = finderServices.getService(ledger.getGameId());
+				PaymentWsCallback callbackSvc = finderServices.getService(ledger.getGameId());
 				callbackSvc.playerPaid(gameId, playerId, amountReceived);
 				
 				// Store the transaction

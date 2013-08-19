@@ -4,10 +4,11 @@ import java.io.Serializable;
 
 import javax.enterprise.context.ApplicationScoped;
 
-import com.slopeware.bcgames.common.config.ConfigStore;
+import org.mvbrock.bcgames.common.config.ConfigStore;
+
 
 @ApplicationScoped
-public class PaymentMspConfigStore extends ConfigStore<PaymentMspConfig> implements Serializable {
+public class PaymentWsConfigStore extends ConfigStore<PaymentWsConfig> implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	public static final String BitcoinUrl = "bitcoin.url";
@@ -15,10 +16,10 @@ public class PaymentMspConfigStore extends ConfigStore<PaymentMspConfig> impleme
 	public static final String BitcoinPassword = "bitcoin.password";
 	public static final String BitcoinPollInterval = "bitcoin.pollInterval";
 	
-	public PaymentMspConfigStore() { }
+	public PaymentWsConfigStore() { }
 
 	@Override
-	protected Class<PaymentMspConfig> getConfigType() {
-		return PaymentMspConfig.class;
+	protected Class<PaymentWsConfig> getConfigType() {
+		return PaymentWsConfig.class;
 	}
 }

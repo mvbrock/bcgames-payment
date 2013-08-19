@@ -8,6 +8,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 
 import org.mvbrock.bcgames.payment.model.Game;
 import org.mvbrock.bcgames.payment.model.GameType;
@@ -16,11 +17,12 @@ import org.mvbrock.bcgames.payment.model.WagerTier;
 
 
 @Path("/payment")
-public interface PaymentMspService {
+public interface PaymentWsService {
 	@POST
 	@Path("/creategame")
 	@Consumes("application/json")
-	public Game createGame(Game game, String callbackUrl);
+	@Produces("application/json")
+	public Game createGame(Game game, @QueryParam("callbackUrl") String callbackUrl);
 
 	@POST
 	@Path("/{gameId}/joined")

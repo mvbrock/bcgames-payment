@@ -12,12 +12,12 @@
 	</parent>
 	<dependencies>
 		<!-- J2EE CDI -->
-                <dependency>
-                        <groupId>javax.enterprise</groupId>
-                        <artifactId>cdi-api</artifactId>
-                        <scope>provided</scope>
-                        <version>${cdi-api.version}</version>
-                </dependency>
+        <dependency>
+            <groupId>javax.enterprise</groupId>
+            <artifactId>cdi-api</artifactId>
+            <scope>provided</scope>
+            <version>${cdi-api.version}</version>
+        </dependency>
  		<!-- Errai Core -->
 		<dependency>
 			<groupId>org.jboss.errai</groupId>
@@ -105,6 +105,12 @@
 			<artifactId>gwt-user</artifactId>
 			<version>${gwt.version}</version>
 			<scope>provided</scope>
+		</dependency>
+		<!-- RESTEasy Jackson Provider -->
+		<dependency>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>resteasy-jackson-provider</artifactId>
+			<version>${resteasy.version}</version>
 		</dependency>
 	</dependencies>
 	<build>

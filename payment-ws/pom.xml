@@ -93,6 +93,6 @@
 		</dependency>
 	</dependencies>
 	<build>
-		<finalName>payment-msp</finalName>
+		<finalName>payment-ws</finalName>
 	</build>
 </project>

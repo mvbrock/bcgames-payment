@@ -10,8 +10,8 @@ import javax.annotation.PostConstruct;
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Inject;
 
-import org.mvbrock.bcgames.payment.ws.interfaces.PaymentMspCallbackService;
-import org.mvbrock.bcgames.payment.ws.interfaces.PaymentMspService;
+import org.mvbrock.bcgames.payment.ws.interfaces.PaymentWsCallback;
+import org.mvbrock.bcgames.payment.ws.interfaces.PaymentWsService;
 import org.mvbrock.bcgames.payment.model.Game;
 import org.mvbrock.bcgames.payment.model.GameStatus;
 import org.mvbrock.bcgames.payment.model.GameType;
@@ -22,8 +22,8 @@ import org.slf4j.LoggerFactory;
 
 
 @SessionScoped
-public class PaymentMspServiceImpl implements PaymentMspService, Serializable {
-	private static final Logger log = LoggerFactory.getLogger(PaymentMspServiceImpl.class);
+public class PaymentWsServiceImpl implements PaymentWsService, Serializable {
+	private static final Logger log = LoggerFactory.getLogger(PaymentWsServiceImpl.class);
 	private static final long serialVersionUID = 1L;
 
 	// Maps indivual player game addresses to games
@@ -32,7 +32,7 @@ public class PaymentMspServiceImpl implements PaymentMspService, Serializable {
 	private Map<String, Player> players = new HashMap<String, Player>();
 
 	@Inject
-	private PaymentMspConfigStore config;
+	private PaymentWsConfigStore config;
 
 	@Inject
 	private BitcoinController bitcoinCtl;
@@ -40,7 +40,7 @@ public class PaymentMspServiceImpl implements PaymentMspService, Serializable {
 	@Inject
 	private CallbackServiceTracker finderServices;
 
-	public PaymentMspServiceImpl() { }
+	public PaymentWsServiceImpl() { }
 
 	@PostConstruct
 	public void init() { }
@@ -67,7 +67,7 @@ public class PaymentMspServiceImpl implements PaymentMspService, Serializable {
 				gameAddress);
 		
 		// Return the generated address to the player
-		PaymentMspCallbackService callbackSvc = finderServices.getService(gameId);
+		PaymentWsCallback callbackSvc = finderServices.getService(gameId);
 		callbackSvc.updateGameAddress(gameId, player.getId(), gameAddress);
 		log.info("Providing player, " + player.getId() + ", with Bitcoin address: " + gameAddress);
 		
@@ -106,7 +106,7 @@ public class PaymentMspServiceImpl implements PaymentMspService, Serializable {
 	public void endGame(String gameId, String winnerId) {
 		Game game = games.get(gameId);
 		game.playerWon(winnerId);
-		for(Player player : game.getPlayers()) {
+		for(Player player : game.getPlayerCollection()) {
 			game.playerLost(player.getId());
 		}
 	}
@@ -117,10 +117,14 @@ public class PaymentMspServiceImpl implements PaymentMspService, Serializable {
 	}
 
 	public List<WagerTier> getWagerTiers() {
-		return new ArrayList<WagerTier>(config.getConfig().getWagerTiers().values());
+		List<WagerTier> wagerTiers = new ArrayList<WagerTier>(config.getConfig().getWagerTiers().values());
+		log.debug("Returning " + wagerTiers.size() + " wager tiers.");
+		return wagerTiers;
 	}
 
 	public List<GameType> getGameTypes() {
-		return new ArrayList<GameType>(config.getConfig().getGameTypes().values());
+		List<GameType> gameTypes = new ArrayList<GameType>(config.getConfig().getGameTypes().values());
+		log.debug("Returning " + gameTypes.size() + " game types.");
+		return gameTypes;
 	}
 }

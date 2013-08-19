@@ -29,14 +29,14 @@
    "gameTypes":{
       "orbitalwars":{
          "id":"orbitalwars",
-         "name":"Orbital Wars"
-         "minPlayers":2
+         "name":"Orbital Wars",
+         "minPlayers":2,
          "maxPlayers":2
-      }
+      },
       "fastbutton":{
       	"id":"fastbutton",
-      	"name":"Fast Button"
-      	"minPlayers":2
+      	"name":"Fast Button",
+      	"minPlayers":2,
       	"maxPlayers":2
       }
    },

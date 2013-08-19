@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.jboss.errai.common.client.api.annotations.Portable;
 
 @Portable
@@ -58,11 +59,19 @@ public class Game {
 		this.status = status;
 	}
 	
-	public Collection<Player> getPlayers() {
+	public Map<String, Player> getPlayers() {
+		return players;
+	}
+
+	public void setPlayers(Map<String, Player> players) {
+		this.players = players;
+	}
+	
+	public Collection<Player> getPlayerCollection() {
 		return players.values();
 	}
 	
-	public Player [] getPlayersAsArray() {
+	public Player [] getPlayerCollectionAsArray() {
 		return players.values().toArray(new Player[players.values().size()]);
 	}
 
@@ -78,6 +87,14 @@ public class Game {
 		players.remove(id);
 	}
 	
+	public Map<String, Player> getLosers() {
+		return losers;
+	}
+
+	public void setLosers(Map<String, Player> losers) {
+		this.losers = losers;
+	}
+
 	public void playerLost(String id) {
 		if(players.containsKey(id)) {
 			Player player = players.remove(id);
@@ -85,7 +102,7 @@ public class Game {
 		}
 	}
 	
-	public Collection<Player> getLosers() {
+	public Collection<Player> getLoserCollection() {
 		return losers.values();
 	}
 	

@@ -24,7 +24,7 @@ public class BitcoinClientFactoryJR4J implements BitcoinClientFactory, Serializa
 	private BitcoinRpcClient bcRpcClient = null;
 
 	@Inject
-	private PaymentMspConfigStore config;
+	private PaymentWsConfigStore config;
 	
 	public BitcoinClientFactoryJR4J() {
 		super();
@@ -40,11 +40,11 @@ public class BitcoinClientFactoryJR4J implements BitcoinClientFactory, Serializa
 		Authenticator.setDefault(new Authenticator() {
 			protected PasswordAuthentication getPasswordAuthentication() {
 				return new PasswordAuthentication(
-						config.getProperty(PaymentMspConfigStore.BitcoinUsername),
-						config.getProperty(PaymentMspConfigStore.BitcoinPassword).toCharArray());
+						config.getProperty(PaymentWsConfigStore.BitcoinUsername),
+						config.getProperty(PaymentWsConfigStore.BitcoinPassword).toCharArray());
 			}
 		});
-		String bcUrlStr = config.getProperty(PaymentMspConfigStore.BitcoinUrl);
+		String bcUrlStr = config.getProperty(PaymentWsConfigStore.BitcoinUrl);
 		log.info("Bitcoin client URL: " + bcUrlStr);
 		URL bcUrl = null;
 		JsonRpcHttpClient jsonRpcClient = null;

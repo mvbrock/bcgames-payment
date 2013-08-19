@@ -1,21 +1,13 @@
 package org.mvbrock.bcgames.payment.ws;
 
-import java.io.IOException;
 import java.util.Map;
 
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.mvbrock.bcgames.payment.model.GameType;
 import org.mvbrock.bcgames.payment.model.WagerTier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import com.slopeware.bcgames.common.config.Config;
+import org.mvbrock.bcgames.common.config.Config;
 
-public class PaymentMspConfig extends Config {
-	private static final Logger log = LoggerFactory.getLogger(PaymentMspConfig.class);
-	private static final ObjectMapper mapper = new ObjectMapper();
+public class PaymentWsConfig extends Config {
 	
 	protected Map<String, WagerTier> wagerTiers;
 	protected Map<String, GameType> gameTypes;
@@ -23,9 +15,9 @@ public class PaymentMspConfig extends Config {
 	protected Double rake;
 	protected String rakeAddress;
 	
-	public PaymentMspConfig() { }
+	public PaymentWsConfig() { }
 	
-	public PaymentMspConfig(
+	public PaymentWsConfig(
 			Map<String, WagerTier> wagerTiers,
 			Map<String, GameType> gameTypes,
 			String token,
@@ -58,19 +50,5 @@ public class PaymentMspConfig extends Config {
 	
 	public String getRakeAddress() {
 		return rakeAddress;
-	}
-	
-	@Override
-	public String toString() {
-		try {
-			return mapper.writeValueAsString(this);
-		} catch (JsonGenerationException e) {
-			log.error("Cannot generate JSON from object", e);
-		} catch (JsonMappingException e) {
-			log.error("Cannot map JSON from object", e);
-		} catch (IOException e) {
-			log.error("Cannot write JSON from object", e);
-		}
-		return null;
 	}
 }
