@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.codehaus.jackson.map.annotate.JsonSerialize;
+import org.codehaus.jackson.annotate.JsonIgnore;
 import org.jboss.errai.common.client.api.annotations.Portable;
 
 @Portable
@@ -67,14 +67,17 @@ public class Game {
 		this.players = players;
 	}
 	
+	@JsonIgnore
 	public Collection<Player> getPlayerCollection() {
 		return players.values();
 	}
 	
+	@JsonIgnore
 	public Player [] getPlayerCollectionAsArray() {
 		return players.values().toArray(new Player[players.values().size()]);
 	}
 
+	@JsonIgnore
 	public Player getPlayer(String id) {
 		return players.get(id);
 	}
@@ -102,6 +105,7 @@ public class Game {
 		}
 	}
 	
+	@JsonIgnore
 	public Collection<Player> getLoserCollection() {
 		return losers.values();
 	}

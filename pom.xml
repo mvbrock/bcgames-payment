@@ -28,7 +28,7 @@
 		<jetty.version>6.1.25</jetty.version>
 		<slf4j.version>1.6.1</slf4j.version>
 		<uel.impl.version>2.1.2-b04</uel.impl.version>
-		<resteasy.version>2.3.5.Final</resteasy.version>
+		<resteasy.version>3.0.3.Final</resteasy.version>
 		<log4j.version>1.2.17</log4j.version>
 		<jasypt.version>1.9.0</jasypt.version>
 		<jsonrpc4j.version>0.28</jsonrpc4j.version>
