@@ -1,6 +1,7 @@
 package org.mvbrock.bcgames.payment.ws;
 
 import java.io.Serializable;
+import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,7 +24,6 @@ public class BitcoinProcessing implements Runnable, Serializable {
 	private static final Logger log = LoggerFactory.getLogger(BitcoinProcessing.class);
 	
 	private final int incomingWindow = 100;
-	private int incomingIndex = 0;
 	
 	// Ledgers mapped by incoming Bitcoin address
 	private Map<String, GameLedger> ledgers = new ConcurrentHashMap<String, GameLedger>();
@@ -73,13 +73,8 @@ public class BitcoinProcessing implements Runnable, Serializable {
 		log.info("Starting Bitcoin processing thread");
 		while(isRunning.get() == true) {
 			// Process the incoming transactions
-			int transactionCount = 0;
-			do {
-				Transaction [] incoming = bitcoin.listtransactions("", incomingWindow, incomingIndex);
-				transactionCount = incoming.length;
-				incomingIndex += transactionCount;
-				processIncoming(incoming);
-			} while(transactionCount == incomingWindow);
+			Transaction [] incoming = bitcoin.listtransactions("", incomingWindow, 0);
+			processIncoming(incoming);
 			
 			// Check existing transaction confirmations for payout
 			for(Transaction transaction : transactions.values()) {
@@ -105,7 +100,7 @@ public class BitcoinProcessing implements Runnable, Serializable {
 					switch(ledger.getState()) {
 						case IncomingWaiting:
 							// Only process incoming transactions if the ledger is waiting
-							processIncoming(ledger, transaction);
+							processValidIncoming(ledger, transaction);
 							break;
 						default:
 							// Issue automatic refund for any incoming transaction on a non-waiting ledger
@@ -153,10 +148,10 @@ public class BitcoinProcessing implements Runnable, Serializable {
 		}
 	}
 	
-	private void processIncoming(GameLedger ledger, Transaction transaction) {
+	private void processValidIncoming(GameLedger ledger, Transaction transaction) {
 		Double amountReceived = transaction.getAmount();
 		// Determine if the transaction is sufficient
-		if(amountReceived != 0.0) {
+		if(amountReceived.compareTo(0.0) != 0) {
 			// Retrieve the information about the transaction
 			String gameAddress = ledger.getGameAddress();
 			String gameId = ledger.getGameId();
@@ -165,15 +160,17 @@ public class BitcoinProcessing implements Runnable, Serializable {
 			
 			WagerTier wager = config.getConfig().getWagerTiers().get(wagerTier);
 			Double amountRequired = wager.getAmount();
+			
+			DecimalFormat amountFormatter = new DecimalFormat("#.########");
 			log.info("Received payment from player: " + playerId + "\n" +
 					"\tBitcoin Address: " + gameAddress + "\n" +
 					"\tGame ID: " + gameId + "\n" +
 					"\tWager Tier: " + wagerTier + "\n" +
-					"\tAmount Required: " + amountRequired + "\n" +
-					"\tAmount Received: " + amountReceived);
+					"\tAmount Required: " + amountFormatter.format(amountRequired) + "\n" +
+					"\tAmount Received: " + amountFormatter.format(amountReceived));
 			
 			// Compare the amount received to the amount expected
-			if(amountRequired == amountReceived) {
+			if(amountRequired.compareTo(amountReceived) == 0) {
 				log.info("Received correct amount from player.");
 				
 				// Provide update to the WS client

@@ -16,13 +16,14 @@ public class Transaction extends JsonObject {
 	private Integer time;
 	private Integer timereceived;
 	private String comment;
+	private TransactionDetails details;
 
 	public Transaction() {
 	}
 
 	public Transaction(String account, String address, String category, Double amount, Double fee,
 			Integer confirmations, String blockhash, Integer blockindex, Integer blocktime, String txid, Integer time,
-			Integer timereceived, String comment) {
+			Integer timereceived, String comment, TransactionDetails details) {
 		this.account = account;
 		this.address = address;
 		this.category = category;
@@ -88,5 +89,9 @@ public class Transaction extends JsonObject {
 
 	public String getComment() {
 		return comment;
+	}
+
+	public TransactionDetails getDetails() {
+		return details;
 	}
 }
