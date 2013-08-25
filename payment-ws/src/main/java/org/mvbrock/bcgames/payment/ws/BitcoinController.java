@@ -5,17 +5,18 @@ import java.io.Serializable;
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.mvbrock.bcgames.payment.model.Game;
 import org.mvbrock.bcgames.payment.model.Player;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 @SessionScoped
 public class BitcoinController implements Serializable {
-	private static final Logger log = LoggerFactory.getLogger(BitcoinController.class);
 	private static final long serialVersionUID = 1L;
 
+	@Inject
+	private transient Logger log;
+	
 	@Inject
 	private BitcoinRpcClient bitcoin;
 	
@@ -66,6 +67,7 @@ public class BitcoinController implements Serializable {
 	}
 	
 	public String waitForIncomingPayment(Game game, String playerId) {
+		log.info("Waiting for incoming payment from player \"" + playerId + "\" in game \"" + game.getId() + "\"");
 		String gameAddress = bitcoin.getnewaddress();
 		String playerAddress = game.getPlayer(playerId).getPlayerAddress();
 		GameLedger ledger = new GameLedger(game.getId(), playerId, GameLedgerState.IncomingWaiting,

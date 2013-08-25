@@ -3,7 +3,7 @@
  "http://java.sun.com/dtd/web-app_2_3.dtd" >
 
 <web-app>
-	<display-name>Payment MSP</display-name>
+	<display-name>Payment WS</display-name>
 
 	<context-param>
 		<param-name>resteasy.scan</param-name>

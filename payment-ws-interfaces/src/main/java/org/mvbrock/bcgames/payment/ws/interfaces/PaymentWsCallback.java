@@ -10,7 +10,7 @@ import javax.ws.rs.PathParam;
 import org.mvbrock.bcgames.payment.model.GameType;
 import org.mvbrock.bcgames.payment.model.WagerTier;
 
-@Path("/payment.interfaces")
+@Path("/payment/callback")
 public interface PaymentWsCallback {
 	@POST
 	@Path("/update/wagertiers")

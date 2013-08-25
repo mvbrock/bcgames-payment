@@ -15,7 +15,6 @@ import org.mvbrock.bcgames.payment.model.GameType;
 import org.mvbrock.bcgames.payment.model.Player;
 import org.mvbrock.bcgames.payment.model.WagerTier;
 
-
 @Path("/payment")
 public interface PaymentWsService {
 	@POST

@@ -4,7 +4,6 @@
 	<groupId>org.mvbrock.bcgames.payment.ws</groupId>
 	<artifactId>payment-ws</artifactId>
 	<packaging>war</packaging>
-	<version>1.0.0-SNAPSHOT</version>
 	<name>Payment Web Service</name>
 	<parent>
 		<groupId>org.mvbrock.bcgames.payment</groupId>
@@ -23,6 +22,7 @@
 		</repository>
 	</repositories>
 	<dependencies>
+		<!-- BC Games -->
 		<dependency>
 			<groupId>org.mvbrock.bcgames.payment.model</groupId>
 			<artifactId>payment-model</artifactId>
@@ -39,12 +39,14 @@
 			<artifactId>bcgames-common</artifactId>
 			<version>${bcgames.common.version}</version>
 		</dependency>
+		<!-- JUnit -->
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
+		<!-- JBoss Weld -->
 		<dependency>
 			<groupId>org.jboss.weld.se</groupId>
 			<artifactId>weld-se-core</artifactId>
@@ -55,6 +57,7 @@
 			<artifactId>weld-servlet</artifactId>
 			<version>${weld.version}</version>
 		</dependency>
+		<!-- JBoss RESTEasy -->
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-jaxrs</artifactId>
@@ -77,19 +80,38 @@
 			</exclusions>
 		</dependency>
 		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>${log4j.version}</version>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>resteasy-client</artifactId>
+			<version>${resteasy.version}</version>
 		</dependency>
+		<!-- SLF4J -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<!-- Jasypt -->
 		<dependency>
 			<groupId>org.jasypt</groupId>
 			<artifactId>jasypt</artifactId>
 			<version>${jasypt.version}</version>
 		</dependency>
+		<!-- JSONRPC4J -->
 		<dependency>
 			<groupId>com.googlecode</groupId>
 			<artifactId>jsonrpc4j</artifactId>
 			<version>${jsonrpc4j.version}</version>
+		</dependency>
+		<!-- Runtime / Container dependencies -->
+		<dependency>
+			<groupId>org.jboss.logging</groupId>
+			<artifactId>jboss-logging</artifactId>
+			<version>${jboss-logging.version}</version>
 		</dependency>
 	</dependencies>
 	<build>

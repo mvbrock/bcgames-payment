@@ -20,7 +20,6 @@ import org.mvbrock.bcgames.payment.model.WagerTier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 @SessionScoped
 public class PaymentWsServiceImpl implements PaymentWsService, Serializable {
 	private static final Logger log = LoggerFactory.getLogger(PaymentWsServiceImpl.class);
@@ -46,7 +45,7 @@ public class PaymentWsServiceImpl implements PaymentWsService, Serializable {
 	public void init() { }
 
 	public Game createGame(Game game, String callbackUrl) {
-		log.info("Creating new game: " + game.getId());
+		log.info("Creating new game \"" + game.getId() + "\" from: " + callbackUrl);
 		
 		// Create and store the RESTEasy client
 		finderServices.addClient(game.getId(), callbackUrl);
@@ -61,6 +60,8 @@ public class PaymentWsServiceImpl implements PaymentWsService, Serializable {
 		
 		// Wait for the incoming payment
 		Game game = games.get(gameId);
+		game.addPlayer(player);
+		
 		String gameAddress = bitcoinCtl.waitForIncomingPayment(game, player.getId());
 		player.setGameAddress(gameAddress);
 		log.info("Waiting for incoming payment from player " + player.getId() + " on Bitcoin address: " +
@@ -73,7 +74,6 @@ public class PaymentWsServiceImpl implements PaymentWsService, Serializable {
 		
 		// Store the player
 		players.put(gameAddress, player);
-		game.addPlayer(player);
 	}
 	
 	public void playerLeft(String gameId, String playerId) {
