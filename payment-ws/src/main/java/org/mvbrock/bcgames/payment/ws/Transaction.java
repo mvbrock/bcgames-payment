@@ -16,14 +16,14 @@ public class Transaction extends JsonObject {
 	private Integer time;
 	private Integer timereceived;
 	private String comment;
-	private TransactionDetails details;
+	private TransactionDetails [] details;
 
 	public Transaction() {
 	}
 
 	public Transaction(String account, String address, String category, Double amount, Double fee,
 			Integer confirmations, String blockhash, Integer blockindex, Integer blocktime, String txid, Integer time,
-			Integer timereceived, String comment, TransactionDetails details) {
+			Integer timereceived, String comment, TransactionDetails [] details) {
 		this.account = account;
 		this.address = address;
 		this.category = category;
@@ -37,6 +37,7 @@ public class Transaction extends JsonObject {
 		this.time = time;
 		this.timereceived = timereceived;
 		this.comment = comment;
+		this.details = details;
 	}
 
 	public String getAccount() {
@@ -91,7 +92,32 @@ public class Transaction extends JsonObject {
 		return comment;
 	}
 
-	public TransactionDetails getDetails() {
+	public TransactionDetails [] getDetails() {
 		return details;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((txid == null) ? 0 : txid.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Transaction other = (Transaction) obj;
+		if (txid == null) {
+			if (other.txid != null)
+				return false;
+		} else if (!txid.equals(other.txid))
+			return false;
+		return true;
 	}
 }

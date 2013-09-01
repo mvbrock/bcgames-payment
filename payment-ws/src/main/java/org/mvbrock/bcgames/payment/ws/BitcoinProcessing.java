@@ -2,8 +2,14 @@ package org.mvbrock.bcgames.payment.ws;
 
 import java.io.Serializable;
 import java.text.DecimalFormat;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -27,8 +33,10 @@ public class BitcoinProcessing implements Runnable, Serializable {
 	
 	// Ledgers mapped by incoming Bitcoin address
 	private Map<String, GameLedger> ledgers = new ConcurrentHashMap<String, GameLedger>();
+	
 	// Transactions mapped by incoming Bitcoin address
-	private Map<String, Transaction> transactions = new ConcurrentHashMap<String, Transaction>();
+	private Set<Transaction> ongoingTxs = new HashSet<Transaction>();
+	private Transaction newestTx;
 	
 	private AtomicBoolean isRunning;
 	private Thread thread;
@@ -72,15 +80,15 @@ public class BitcoinProcessing implements Runnable, Serializable {
 		
 		log.info("Starting Bitcoin processing thread");
 		while(isRunning.get() == true) {
-			// Process the incoming transactions
-			Transaction [] incoming = bitcoin.listtransactions("", incomingWindow, 0);
-			processIncoming(incoming);
+			// Retrieve the incoming transactions
+			Collection<Transaction> incomingTxs = retrieveIncoming();
 			
+			// Process the incoming transactions
+			processIncomingTxs(incomingTxs);
+				
 			// Check existing transaction confirmations for payout
-			for(Transaction transaction : transactions.values()) {
-				processExisting(transaction);
-			}
-
+			processOngoingTxs();
+			
 			try {
 				Thread.sleep(pollInterval);
 			} catch (InterruptedException e) {
@@ -90,7 +98,41 @@ public class BitcoinProcessing implements Runnable, Serializable {
 		log.info("Stopping Bitcoin processing thread");
 	}
 	
-	private void processIncoming(Transaction [] incoming) {
+	private Collection<Transaction> retrieveIncoming() {
+		log.debug("Retrieving incoming transactions.");
+		Transaction updatedNewestTx = null;
+		List<Transaction> incomingTxs = new LinkedList<Transaction>();
+		Set<Transaction> incomingTxBlockSet = null;
+		int startingIndex = 0;
+		// Retrieve transaction blocks until the newest transaction from the previous retrieval is reached.
+		do {
+			Transaction [] incomingTxBlock = bitcoin.listtransactions("", incomingWindow, startingIndex);
+			if(incomingTxBlock != null && incomingTxBlock.length > 0) {
+				log.debug("Retrieved " + incomingTxBlock.length + " transactions in block cycle.");
+				
+				// Update the newest TX ID for the first block of incoming transactions
+				if(updatedNewestTx != null) {
+					updatedNewestTx = incomingTxBlock[0];
+				}
+				incomingTxBlockSet = new HashSet<Transaction>(Arrays.asList(incomingTxBlock));
+				incomingTxs.addAll(incomingTxBlockSet);
+				startingIndex += incomingTxBlock.length;
+			} else {
+				incomingTxBlockSet = null;
+				log.debug("Did not receive any transactions in block cycle.");
+			}
+		} while(incomingTxBlockSet != null && incomingTxBlockSet.contains(newestTx) == false);
+		
+		// Update the newest transaction and return the incoming blocks
+		if(updatedNewestTx != null) {
+			newestTx = updatedNewestTx;
+		}
+		log.debug("Retrieved " + incomingTxs.size() + " new transactions.");
+		return incomingTxs;
+	}
+	
+	
+	private Collection<Transaction> processIncomingTxs(Collection<Transaction> incoming) {
 		for(Transaction transaction : incoming) {
 			String gameAddress = transaction.getAddress();
 			GameLedger ledger = ledgers.get(gameAddress);
@@ -108,24 +150,29 @@ public class BitcoinProcessing implements Runnable, Serializable {
 							break;
 					}
 				}
-			} else {
-				log.info("Received payment for non-existent address: " + transaction);
 			}
+		}
+		return ongoingTxs;
+	}
+	
+	private void processOngoingTxs() {
+		for(Transaction tx : ongoingTxs) {
+			processOngoingTx(tx);
 		}
 	}
 	
-	private void processExisting(Transaction transaction) {
-		String gameAddress = transaction.getAddress();
-		Transaction updatedTransaction = bitcoin.gettransaction(transaction.getTxid());
+	private void processOngoingTx(Transaction tx) {
+		String gameAddress = tx.getAddress();
+		Transaction updatedTransaction = bitcoin.gettransaction(tx.getTxid());
 		
 		// Update the confirmation count if it has increased
-		if(updatedTransaction.getConfirmations() > transaction.getConfirmations()) {
-			transaction = updatedTransaction;
-			transactions.put(gameAddress, updatedTransaction);
+		if(updatedTransaction.getConfirmations() > tx.getConfirmations()) {
+			tx = updatedTransaction;
+			ongoingTxs.add(updatedTransaction);
 		}
 		
 		// Check if the required number of confirmations have been reached
-		if(transaction.getConfirmations() >= config.getConfig().getRequiredConfirmations()) {
+		if(tx.getConfirmations() >= config.getConfig().getRequiredConfirmations()) {
 			// Look for the corresponding game and determine if winner should be paid
 			GameLedger ledger = ledgers.get(gameAddress);
 			// If the ledger indicates the winner is waiting for payment, send the payment
@@ -178,7 +225,7 @@ public class BitcoinProcessing implements Runnable, Serializable {
 				callbackSvc.playerPaid(gameId, playerId, amountReceived);
 				
 				// Store the transaction
-				transactions.put(gameAddress, transaction);
+				ongoingTxs.add(transaction);
 				
 				// Update the ledger
 				ledger.setState(GameLedgerState.IncomingReceived);
@@ -196,7 +243,7 @@ public class BitcoinProcessing implements Runnable, Serializable {
 		String playerAddress = ledger.getPlayerAddress();
 		String gameId = ledger.getGameId();
 		String playerId = ledger.getPlayerId();
+		log.info("Sending refund of " + amountReceived + " to " + playerAddress + " for game " + gameId);
 		bitcoin.sendtoaddress(playerAddress, amountReceived, "type=refund, gameId=" + gameId + ", playerId=" + playerId);
-		log.info("Sent refund of " + amountReceived + " to " + playerAddress + " for game " + gameId);
 	}
 }

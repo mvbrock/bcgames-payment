@@ -12,7 +12,6 @@ public class TransactionDetails extends JsonObject {
 	}
 
 	public TransactionDetails(String account, String address, String category, Double amount) {
-		super();
 		this.account = account;
 		this.address = address;
 		this.category = category;
