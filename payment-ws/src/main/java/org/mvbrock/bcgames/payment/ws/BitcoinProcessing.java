@@ -4,8 +4,10 @@ import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +38,7 @@ public class BitcoinProcessing implements Runnable, Serializable {
 	
 	// Transactions mapped by incoming Bitcoin address
 	private Set<Transaction> ongoingTxs = new HashSet<Transaction>();
-	private Transaction newestTx;
+	private Transaction newestTx = null;
 	
 	private AtomicBoolean isRunning;
 	private Thread thread;
@@ -100,35 +102,57 @@ public class BitcoinProcessing implements Runnable, Serializable {
 	
 	private Collection<Transaction> retrieveIncoming() {
 		log.debug("Retrieving incoming transactions.");
-		Transaction updatedNewestTx = null;
-		List<Transaction> incomingTxs = new LinkedList<Transaction>();
-		Set<Transaction> incomingTxBlockSet = null;
-		int startingIndex = 0;
-		// Retrieve transaction blocks until the newest transaction from the previous retrieval is reached.
-		do {
-			Transaction [] incomingTxBlock = bitcoin.listtransactions("", incomingWindow, startingIndex);
-			if(incomingTxBlock != null && incomingTxBlock.length > 0) {
-				log.debug("Retrieved " + incomingTxBlock.length + " transactions in block cycle.");
-				
-				// Update the newest TX ID for the first block of incoming transactions
-				if(updatedNewestTx != null) {
-					updatedNewestTx = incomingTxBlock[0];
-				}
-				incomingTxBlockSet = new HashSet<Transaction>(Arrays.asList(incomingTxBlock));
-				incomingTxs.addAll(incomingTxBlockSet);
-				startingIndex += incomingTxBlock.length;
-			} else {
-				incomingTxBlockSet = null;
-				log.debug("Did not receive any transactions in block cycle.");
-			}
-		} while(incomingTxBlockSet != null && incomingTxBlockSet.contains(newestTx) == false);
 		
-		// Update the newest transaction and return the incoming blocks
-		if(updatedNewestTx != null) {
-			newestTx = updatedNewestTx;
-		}
+		List<Transaction> incomingTxs = new LinkedList<Transaction>();
+		int startingIndex = 0;
+		int blockCounter = 0;
+		boolean continueProcessing = false;
+		
+		do {
+			// Retrieve a block of transactions
+			LinkedList<Transaction> incomingTxBlock =
+					new LinkedList<Transaction>(Arrays.asList(
+							bitcoin.listtransactions("", incomingWindow, startingIndex)));
+			if(incomingTxBlock.isEmpty() == false) {
+				log.debug("Retrieved " + incomingTxBlock.size() + " transactions in block cycle.");
+				startingIndex += incomingTxBlock.size();
+			}
+			
+			// Decide whether to process another transaction block
+			continueProcessing = false;
+			Set<Transaction> incomingTxBlockSet = new HashSet<Transaction>(incomingTxBlock);
+			if(incomingTxBlock.isEmpty() == false) {
+				if(incomingTxBlockSet.contains(newestTx) == true) {
+					// Remove the old transactions
+					incomingTxBlock = removeOlderTransactions(incomingTxBlock, newestTx);
+				} else {
+					continueProcessing = true;
+				}
+			}
+			incomingTxs.addAll(incomingTxBlock);
+			
+			// Update the newest TX ID for the first block of incoming transactions
+			if(blockCounter == 0 && incomingTxBlock.isEmpty() == false) {
+				newestTx = incomingTxBlock.getLast();
+			}
+			blockCounter++;
+		} while(continueProcessing == true);
+		
 		log.debug("Retrieved " + incomingTxs.size() + " new transactions.");
 		return incomingTxs;
+	}
+	
+	private LinkedList<Transaction> removeOlderTransactions(LinkedList<Transaction> txBlock, Transaction lastTx) {
+		log.debug("Removing all transactions older than transaction: " + lastTx.getTxid());
+		Iterator<Transaction> txIter = txBlock.iterator();
+		while(txIter.hasNext()) {
+			Transaction tx = txIter.next();
+			// Remove all transactions 
+			if(tx.getTime() <= lastTx.getTime()) {
+				txIter.remove();
+			}
+		}
+		return txBlock;
 	}
 	
 	
@@ -136,6 +160,7 @@ public class BitcoinProcessing implements Runnable, Serializable {
 		for(Transaction transaction : incoming) {
 			String gameAddress = transaction.getAddress();
 			GameLedger ledger = ledgers.get(gameAddress);
+			// Only process transactions for which a payment ledger exists
 			if(ledger != null) {
 				// Lock on the ledger while updating its state based on the most recent transaction
 				synchronized(ledger) {
@@ -218,7 +243,7 @@ public class BitcoinProcessing implements Runnable, Serializable {
 			
 			// Compare the amount received to the amount expected
 			if(amountRequired.compareTo(amountReceived) == 0) {
-				log.info("Received correct amount from player.");
+				log.info("Received correct amount from player: " + playerId);
 				
 				// Provide update to the WS client
 				PaymentWsCallback callbackSvc = finderServices.getService(ledger.getGameId());
