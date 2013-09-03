@@ -19,15 +19,16 @@ import javax.annotation.PreDestroy;
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
 import org.mvbrock.bcgames.payment.ws.interfaces.PaymentWsCallback;
 import org.mvbrock.bcgames.payment.model.WagerTier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @SessionScoped
 public class BitcoinProcessingThread implements Runnable, Serializable {
 	private static final long serialVersionUID = 1L;
-	private static final Logger log = LoggerFactory.getLogger(BitcoinProcessingThread.class);
+	
+	@Inject
+	private transient Logger log;
 	
 	private final int incomingWindow = 100;
 	
@@ -38,6 +39,7 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 	private Set<Transaction> ongoingTxs = new HashSet<Transaction>();
 	private Transaction newestTx = null;
 	
+	private Integer pollInterval;
 	private AtomicBoolean isRunning;
 	private Thread thread;
 	
@@ -54,6 +56,7 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 	
 	@PostConstruct
 	public void init() {
+		pollInterval = Integer.decode(config.getProperty(PaymentWsConfigStore.BitcoinPollInterval));
 		isRunning = new AtomicBoolean(true);
 		thread = new Thread(this);
 		thread.start();
@@ -74,9 +77,7 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 	}
 	
 	public void run() {
-		final Integer pollInterval = Integer.decode(config.getProperty(PaymentWsConfigStore.BitcoinPollInterval));
-		log.info("Bitcoin client polling interval: " +
-				config.getProperty(PaymentWsConfigStore.BitcoinPollInterval));
+		log.info("Bitcoin client polling interval: " + pollInterval);
 		
 		log.info("Starting Bitcoin processing thread");
 		while(isRunning.get() == true) {

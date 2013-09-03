@@ -10,6 +10,7 @@ import javax.annotation.PostConstruct;
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
 import org.mvbrock.bcgames.payment.ws.interfaces.PaymentWsCallback;
 import org.mvbrock.bcgames.payment.ws.interfaces.PaymentWsService;
 import org.mvbrock.bcgames.payment.model.Game;
@@ -17,14 +18,14 @@ import org.mvbrock.bcgames.payment.model.GameStatus;
 import org.mvbrock.bcgames.payment.model.GameType;
 import org.mvbrock.bcgames.payment.model.Player;
 import org.mvbrock.bcgames.payment.model.WagerTier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @SessionScoped
 public class PaymentWsServiceImpl implements PaymentWsService, Serializable {
-	private static final Logger log = LoggerFactory.getLogger(PaymentWsServiceImpl.class);
 	private static final long serialVersionUID = 1L;
 
+	@Inject
+	private transient Logger log;
+	
 	// Maps indivual player game addresses to games
 	private Map<String, Game> games = new HashMap<String, Game>();
 	// Maps individual player game addresses to players

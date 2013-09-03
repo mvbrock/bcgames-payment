@@ -10,8 +10,7 @@ import javax.enterprise.context.SessionScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
 import com.googlecode.jsonrpc4j.ProxyUtil;
@@ -19,7 +18,9 @@ import com.googlecode.jsonrpc4j.ProxyUtil;
 @SessionScoped
 public class BitcoinClientFactoryJR4J implements BitcoinClientFactory, Serializable {
 	private static final long serialVersionUID = 1L;
-	private static final Logger log = LoggerFactory.getLogger(BitcoinClientFactoryJR4J.class);
+	
+	@Inject
+	private transient Logger log;
 	
 	private BitcoinRpcClient bcRpcClient = null;
 
