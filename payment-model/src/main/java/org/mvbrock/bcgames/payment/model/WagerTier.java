@@ -11,7 +11,6 @@ public class WagerTier {
 	public WagerTier() { }
 	
 	public WagerTier(String id, String name, Double amount) {
-		super();
 		this.id = id;
 		this.name = name;
 		this.amount = amount;

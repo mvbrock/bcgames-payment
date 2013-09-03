@@ -7,6 +7,6 @@ public enum GameStatus {
 	Created,
 	Started,
 	Ended,
-	PayingOut,
+	PaidOut,
 	Removed
 }

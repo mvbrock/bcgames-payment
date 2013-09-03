@@ -62,15 +62,15 @@ public class PaymentWsServiceImpl implements PaymentWsService, Serializable {
 		Game game = games.get(gameId);
 		game.addPlayer(player);
 		
-		String gameAddress = bitcoinCtl.waitForIncomingPayment(game, player.getId());
-		player.setGameAddress(gameAddress);
+		String gameAddress = bitcoinCtl.initializeNewGameAddress(game, player.getId());
+		player.setWagerAddress(gameAddress);
 		log.info("Waiting for incoming payment from player " + player.getId() + " on Bitcoin address: " +
 				gameAddress);
 		
 		// Return the generated address to the player
 		PaymentWsCallback callbackSvc = finderServices.getService(gameId);
-		callbackSvc.updateGameAddress(gameId, player.getId(), gameAddress);
-		log.info("Providing player, " + player.getId() + ", with Bitcoin address: " + gameAddress);
+		callbackSvc.updateWagerAddress(gameId, player.getId(), gameAddress);
+		log.info("Provided player " + player.getId() + " with game address: " + gameAddress);
 		
 		// Store the player
 		players.put(gameAddress, player);

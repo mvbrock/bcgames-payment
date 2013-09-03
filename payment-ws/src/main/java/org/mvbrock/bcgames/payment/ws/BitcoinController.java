@@ -21,7 +21,7 @@ public class BitcoinController implements Serializable {
 	private BitcoinRpcClient bitcoin;
 	
 	@Inject
-	private BitcoinProcessing bcProcessing;
+	private BitcoinProcessingThread bcProcessing;
 	
 	@Inject
 	private PaymentWsConfigStore config;
@@ -30,48 +30,44 @@ public class BitcoinController implements Serializable {
 
 	public void queueWinnerPayout(Game game) {
 		Player winner = game.getWinner();
-		String winnerGameAddress = winner.getGameAddress();
-		GameLedger winningLedger = bcProcessing.getLedger(winnerGameAddress);
+		String winnerPayoutAddress = winner.getWagerAddress();
+		GameLedger winningLedger = bcProcessing.getLedger(winnerPayoutAddress);
 		
 		// Initialize the payout with the original incoming amount from the player
-		Double payout = winningLedger.getIncomingAmount();
+		Double payoutAmount = winningLedger.getIncomingAmount();
 		
 		for(Player loser : game.getLoserCollection()) {
 			// Retrieve the losing ledger
-			String loserGameAddress = loser.getGameAddress();
-			GameLedger losingLedger = bcProcessing.getLedger(loserGameAddress);
+			String loserWagerAddress = loser.getWagerAddress();
+			GameLedger losingLedger = bcProcessing.getLedger(loserWagerAddress);
 			
 			// Add the incoming amount from the losing ledger to the payout
-			payout += losingLedger.getIncomingAmount();
+			payoutAmount += losingLedger.getIncomingAmount();
 		}
 		
-		// Update the winning ledger with the final outgoing amount
+		// Update the winning ledger with the final payout amount
 		winningLedger.setState(GameLedgerState.OutgoingWinnerWaiting);
-		winningLedger.setOutgoingAmount(payout);
+		winningLedger.setOutgoingAmount(payoutAmount);
 	}
 	
 	public void issueRefund(Game game, String playerId) {
 		// Retrieve the player info in order to issue the refund
-		String gameId = game.getId();
 		Player player = game.getPlayer(playerId);
-		String playerAddress = player.getPlayerAddress();
-		String gameAddress = player.getGameAddress();
+		String gameAddress = player.getWagerAddress();
 		
 		// Retrieve the ledger and the original amount received
 		GameLedger ledger = bcProcessing.getLedger(gameAddress);
 		Double amountReceived = ledger.getIncomingAmount();
 		
 		// Issue the refund
-		bitcoin.sendtoaddress(playerAddress, amountReceived, "type=refund, gameId=" + gameId + ", playerId=" + playerId);
-		log.info("Sent refund of " + amountReceived + " to " + playerAddress + " for game " + gameId);
+		bcProcessing.issueTxRefund(ledger, amountReceived);
 	}
 	
-	public String waitForIncomingPayment(Game game, String playerId) {
-		log.info("Waiting for incoming payment from player \"" + playerId + "\" in game \"" + game.getId() + "\"");
+	public String initializeNewGameAddress(Game game, String playerId) {
 		String gameAddress = bitcoin.getnewaddress();
-		String playerAddress = game.getPlayer(playerId).getPlayerAddress();
+		String playerAddress = game.getPlayer(playerId).getPayoutAddress();
 		GameLedger ledger = new GameLedger(game.getId(), playerId, GameLedgerState.IncomingWaiting,
-				game.getWager().getId(), playerAddress, gameAddress);
+				game.getTier().getId(), playerAddress, gameAddress);
 		bcProcessing.createLedger(gameAddress, ledger);
 		return gameAddress;
 	}

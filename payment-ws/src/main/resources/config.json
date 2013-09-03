@@ -1,41 +1,43 @@
 {
    "wagerTiers":{
-      "3":{
-         "id":"3",
-         "name":"0.01 Bitcoins",
-         "amount":0.01
+      "1":{
+         "id":"1",
+         "name":"1 Bitcoin",
+         "amount":1.0
       },
       "2":{
          "id":"2",
          "name":"0.1 Bitcoins",
          "amount":0.1
       },
-      "1":{
-         "id":"1",
-         "name":"1 Bitcoin",
-         "amount":1.0
-      },
-      "5":{
-         "id":"5",
-         "name":"Free to Play",
-         "amount":0.0
+      "3":{
+         "id":"3",
+         "name":"0.01 Bitcoins",
+         "amount":0.01
       },
       "4":{
          "id":"4",
          "name":"0.001 Bitcoins",
          "amount":0.0010
+      },
+      "5":{
+         "id":"5",
+         "name":"Free to Play",
+         "amount":0.0
       }
    },
    "gameTypes":{
       "orbitalwars":{
          "id":"orbitalwars",
          "name":"Orbital Wars",
+         "url":"http://localhost:8080/orbitalwars"
          "minPlayers":2,
          "maxPlayers":2
       },
       "fastbutton":{
       	"id":"fastbutton",
       	"name":"Fast Button",
+      	"url":"http://localhost:8080/fastbutton"
       	"minPlayers":2,
       	"maxPlayers":2
       }

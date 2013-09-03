@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -25,15 +24,14 @@ import org.mvbrock.bcgames.payment.model.WagerTier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 @SessionScoped
-public class BitcoinProcessing implements Runnable, Serializable {
+public class BitcoinProcessingThread implements Runnable, Serializable {
 	private static final long serialVersionUID = 1L;
-	private static final Logger log = LoggerFactory.getLogger(BitcoinProcessing.class);
+	private static final Logger log = LoggerFactory.getLogger(BitcoinProcessingThread.class);
 	
 	private final int incomingWindow = 100;
 	
-	// Ledgers mapped by incoming Bitcoin address
+	// Ledgers mapped by incoming address
 	private Map<String, GameLedger> ledgers = new ConcurrentHashMap<String, GameLedger>();
 	
 	// Transactions mapped by incoming Bitcoin address
@@ -52,7 +50,7 @@ public class BitcoinProcessing implements Runnable, Serializable {
 	@Inject
 	private BitcoinRpcClient bitcoin;
 	
-	public BitcoinProcessing() { }
+	public BitcoinProcessingThread() { }
 	
 	@PostConstruct
 	public void init() {
@@ -156,9 +154,9 @@ public class BitcoinProcessing implements Runnable, Serializable {
 	}
 	
 	
-	private Collection<Transaction> processIncomingTxs(Collection<Transaction> incoming) {
-		for(Transaction transaction : incoming) {
-			String gameAddress = transaction.getAddress();
+	private Collection<Transaction> processIncomingTxs(Collection<Transaction> incomingTxs) {
+		for(Transaction tx : incomingTxs) {
+			String gameAddress = tx.getAddress();
 			GameLedger ledger = ledgers.get(gameAddress);
 			// Only process transactions for which a payment ledger exists
 			if(ledger != null) {
@@ -167,11 +165,11 @@ public class BitcoinProcessing implements Runnable, Serializable {
 					switch(ledger.getState()) {
 						case IncomingWaiting:
 							// Only process incoming transactions if the ledger is waiting
-							processValidIncoming(ledger, transaction);
+							processValidIncoming(ledger, tx);
 							break;
 						default:
 							// Issue automatic refund for any incoming transaction on a non-waiting ledger
-							issueTransactionRefund(ledger, transaction);
+							issueTxRefund(ledger, tx.getAmount());
 							break;
 					}
 				}
@@ -258,13 +256,12 @@ public class BitcoinProcessing implements Runnable, Serializable {
 				ledger.setIncomingReceivedDate(new Date());
 			} else {
 				log.info("Did not receive correct amount, returning it back to the player.");
-				issueTransactionRefund(ledger, transaction);
+				issueTxRefund(ledger, transaction.getAmount());
 			}
 		}
 	}
 	
-	private void issueTransactionRefund(GameLedger ledger, Transaction transaction) {
-		Double amountReceived = transaction.getAmount();
+	public void issueTxRefund(GameLedger ledger, Double amountReceived) {
 		String playerAddress = ledger.getPlayerAddress();
 		String gameId = ledger.getGameId();
 		String playerId = ledger.getPlayerId();

@@ -5,8 +5,8 @@ import org.jboss.errai.common.client.api.annotations.Portable;
 @Portable
 public class Player {
 	private String id;
-	private String playerAddress;
-	private String gameAddress;
+	private String payoutAddress;
+	private String wagerAddress;
 
 	public Player() { }
 	
@@ -16,27 +16,27 @@ public class Player {
 
 	public Player(String id, String playerAddress, String gameAddress) {
 		this.id = id;
-		this.playerAddress = playerAddress;
-		this.gameAddress = gameAddress;
+		this.payoutAddress = playerAddress;
+		this.wagerAddress = gameAddress;
 	}
 
 	public String getId() {
 		return id;
 	}
 
-	public String getPlayerAddress() {
-		return playerAddress;
+	public String getPayoutAddress() {
+		return payoutAddress;
 	}
 
-	public void setPlayerAddress(String playerAddress) {
-		this.playerAddress = playerAddress;
+	public void setPayoutAddress(String payoutAddress) {
+		this.payoutAddress = payoutAddress;
 	}
 
-	public String getGameAddress() {
-		return gameAddress;
+	public String getWagerAddress() {
+		return wagerAddress;
 	}
 
-	public void setGameAddress(String gameAddress) {
-		this.gameAddress = gameAddress;
+	public void setWagerAddress(String wagerAddress) {
+		this.wagerAddress = wagerAddress;
 	}
 }

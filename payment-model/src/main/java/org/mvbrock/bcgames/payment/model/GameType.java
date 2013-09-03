@@ -6,15 +6,16 @@ import org.jboss.errai.common.client.api.annotations.Portable;
 public class GameType {
 	private String id;
 	private String name;
+	private String url;
 	private Integer minPlayers;
 	private Integer maxPlayers;
 	
 	public GameType() { }
 	
-	public GameType(String id, String name, Integer minPlayers, Integer maxPlayers) {
-		super();
+	public GameType(String id, String name, String url, Integer minPlayers, Integer maxPlayers) {
 		this.id = id;
 		this.name = name;
+		this.url = url;
 		this.minPlayers = minPlayers;
 		this.maxPlayers = maxPlayers;
 	}
@@ -25,6 +26,10 @@ public class GameType {
 
 	public String getName() {
 		return name;
+	}
+	
+	public String getUrl() {
+		return url;
 	}
 
 	public Integer getMinPlayers() {

@@ -13,7 +13,7 @@ import org.jboss.errai.common.client.api.annotations.Portable;
 public class Game {
 	private String id;
 	private GameType type;
-	private WagerTier wager;
+	private WagerTier tier;
 	private GameStatus status;
 	private Map<String, Player> players = new HashMap<String, Player>();
 	private Map<String, Player> losers = new HashMap<String, Player>();
@@ -24,14 +24,14 @@ public class Game {
 	public Game(GameType type, WagerTier wager) {
 		this.id = UUID.randomUUID().toString() + (new Date()).getTime();
 		this.type = type;
-		this.wager = wager;
+		this.tier = wager;
 		this.status = GameStatus.Created;
 	}
 	
 	public Game(String id, GameType type, WagerTier wager) {
 		this.id = id;
 		this.type = type;
-		this.wager = wager;
+		this.tier = wager;
 		this.status = GameStatus.Created;
 	}
 
@@ -47,8 +47,8 @@ public class Game {
 		return type;
 	}
 
-	public WagerTier getWager() {
-		return wager;
+	public WagerTier getTier() {
+		return tier;
 	}
 
 	public GameStatus getStatus() {

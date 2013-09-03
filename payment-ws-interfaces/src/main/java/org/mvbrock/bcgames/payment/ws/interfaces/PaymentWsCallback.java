@@ -36,7 +36,7 @@ public interface PaymentWsCallback {
 	@POST
 	@Path("/game/{gameId}/{playerId}/address")
 	@Consumes("application/json")
-	public void updateGameAddress(@PathParam("gameId") String gameId, @PathParam("playerId") String playerId,
+	public void updateWagerAddress(@PathParam("gameId") String gameId, @PathParam("playerId") String playerId,
 			String gameAddress);
 
 	@POST
