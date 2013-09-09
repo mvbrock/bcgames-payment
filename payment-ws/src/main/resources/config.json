@@ -30,14 +30,14 @@
       "orbitalwars":{
          "id":"orbitalwars",
          "name":"Orbital Wars",
-         "url":"http://localhost:8080/orbitalwars"
+         "url":"http://localhost:8080/orbitalwars",
          "minPlayers":2,
          "maxPlayers":2
       },
       "fastbutton":{
       	"id":"fastbutton",
       	"name":"Fast Button",
-      	"url":"http://localhost:8080/fastbutton"
+      	"url":"http://localhost:8080/fastbutton",
       	"minPlayers":2,
       	"maxPlayers":2
       }

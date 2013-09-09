@@ -14,10 +14,10 @@ public class Player {
 		this.id = id;
 	}
 
-	public Player(String id, String playerAddress, String gameAddress) {
+	public Player(String id, String payoutAddress, String wagerAddress) {
 		this.id = id;
-		this.payoutAddress = playerAddress;
-		this.wagerAddress = gameAddress;
+		this.payoutAddress = payoutAddress;
+		this.wagerAddress = wagerAddress;
 	}
 
 	public String getId() {
