@@ -13,8 +13,8 @@ public class GameLedger {
 	private GameLedgerState state;
 	
 	private String wagerTier;
-	private String playerAddress;
-	private String gameAddress;
+	private String payoutAddress;
+	private String wagerAddress;
 
 	private Date incomingReceivedDate;
 	private Double incomingAmount;
@@ -24,15 +24,15 @@ public class GameLedger {
 	public GameLedger() { }
 	
 	public GameLedger(String gameId, String playerId, GameLedgerState state, String wagerTier,
-			String playerAddress, String gameAddress) {
+			String payoutAddress, String wagerAddress) {
 		this.date = new Date();
 		this.id = UUID.randomUUID().toString() + date.getTime();
 		this.gameId = gameId;
 		this.playerId = playerId;
 		this.state = state;
 		this.wagerTier = wagerTier;
-		this.playerAddress = playerAddress;
-		this.gameAddress = gameAddress;
+		this.payoutAddress = payoutAddress;
+		this.wagerAddress = wagerAddress;
 		incomingAmount = 0.0;
 		outgoingAmount = 0.0;
 	}
@@ -65,12 +65,12 @@ public class GameLedger {
 		return this.wagerTier;
 	}
 
-	public String getPlayerAddress() {
-		return playerAddress;
+	public String getPayoutAddress() {
+		return payoutAddress;
 	}
 
-	public String getGameAddress() {
-		return gameAddress;
+	public String getWagerAddress() {
+		return wagerAddress;
 	}
 
 	public Date getIncomingReceivedDate() {

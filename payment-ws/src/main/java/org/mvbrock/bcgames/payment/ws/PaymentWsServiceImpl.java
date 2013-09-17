@@ -2,9 +2,7 @@ package org.mvbrock.bcgames.payment.ws;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.SessionScoped;
@@ -26,11 +24,6 @@ public class PaymentWsServiceImpl implements PaymentWsService, Serializable {
 	@Inject
 	private transient Logger log;
 	
-	// Maps indivual player game addresses to games
-	private Map<String, Game> games = new HashMap<String, Game>();
-	// Maps individual player game addresses to players
-	private Map<String, Player> players = new HashMap<String, Player>();
-
 	@Inject
 	private PaymentWsConfigStore config;
 
@@ -38,7 +31,10 @@ public class PaymentWsServiceImpl implements PaymentWsService, Serializable {
 	private BitcoinController bitcoinCtl;
 
 	@Inject
-	private CallbackServiceTracker finderServices;
+	private CallbackServiceTracker callbackTracker;
+	
+	@Inject
+	private GameManager gameMgr;
 
 	public PaymentWsServiceImpl() { }
 
@@ -49,10 +45,10 @@ public class PaymentWsServiceImpl implements PaymentWsService, Serializable {
 		log.info("Creating new game \"" + game.getId() + "\" from: " + callbackUrl);
 		
 		// Create and store the RESTEasy client
-		finderServices.addClient(game.getId(), callbackUrl);
+		callbackTracker.addClient(game.getId(), callbackUrl);
 		
 		// Store the game and return it
-		games.put(game.getId(), game);
+		gameMgr.addGame(game);
 		return game;
 	}
 
@@ -60,25 +56,25 @@ public class PaymentWsServiceImpl implements PaymentWsService, Serializable {
 		log.info("Player " + player.getId() + " joined game: " + gameId);
 		
 		// Wait for the incoming payment
-		Game game = games.get(gameId);
+		Game game = gameMgr.getGame(gameId);
 		game.addPlayer(player);
 		
-		String gameAddress = bitcoinCtl.initializeNewGameAddress(game, player.getId());
-		player.setWagerAddress(gameAddress);
+		String wagerAddress = bitcoinCtl.generateWagerAddress(game, player.getId());
+		player.setWagerAddress(wagerAddress);
 		log.info("Waiting for incoming payment from player " + player.getId() + " on Bitcoin address: " +
-				gameAddress);
+				wagerAddress);
 		
 		// Return the generated address to the player
-		PaymentWsCallback callbackSvc = finderServices.getService(gameId);
-		callbackSvc.updateWagerAddress(gameId, player.getId(), gameAddress);
-		log.info("Provided player " + player.getId() + " with game address: " + gameAddress);
+		PaymentWsCallback callback = callbackTracker.get(gameId);
+		callback.updateWagerAddress(gameId, player.getId(), wagerAddress);
+		log.info("Provided player " + player.getId() + " with game address: " + wagerAddress);
 		
 		// Store the player
-		players.put(gameAddress, player);
+		gameMgr.addPlayer(wagerAddress, player);
 	}
 	
 	public void playerLeft(String gameId, String playerId) {
-		Game game = games.get(gameId);
+		Game game = gameMgr.getGame(gameId);
 		
 		switch(game.getStatus()) {
 			case Created:
@@ -95,17 +91,17 @@ public class PaymentWsServiceImpl implements PaymentWsService, Serializable {
 		}
 	}
 	
-	public void startGame(String gameId, String gameCallbackUrl) {
+	public void startGame(String gameId, String callbackUrl) {
 		log.info("Setting game status to started.");
-		Game game = games.get(gameId);
+		Game game = gameMgr.getGame(gameId);
 		game.setStatus(GameStatus.Started);
 		
-		log.info("Updating callback address for game " + gameId + ": " + gameCallbackUrl);
-		finderServices.addClient(gameId, gameCallbackUrl);
+		log.info("Updating callback address for game " + gameId + ": " + callbackUrl);
+		callbackTracker.addClient(gameId, callbackUrl);
 	}
 	
 	public void endGame(String gameId, String winnerId) {
-		Game game = games.get(gameId);
+		Game game = gameMgr.getGame(gameId);
 		game.playerWon(winnerId);
 		for(Player player : game.getPlayerCollection()) {
 			game.playerLost(player.getId());
@@ -113,7 +109,7 @@ public class PaymentWsServiceImpl implements PaymentWsService, Serializable {
 	}
 	
 	public void payWinner(String gameId) {
-		Game game = games.get(gameId);
+		Game game = gameMgr.getGame(gameId);
 		bitcoinCtl.queueWinnerPayout(game);
 	}
 

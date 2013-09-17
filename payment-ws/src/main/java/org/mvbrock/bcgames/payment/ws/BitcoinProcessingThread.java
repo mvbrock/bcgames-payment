@@ -9,39 +9,28 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.enterprise.context.SessionScoped;
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.mvbrock.bcgames.payment.ws.interfaces.PaymentWsCallback;
+import org.mvbrock.bcgames.payment.model.Game;
 import org.mvbrock.bcgames.payment.model.WagerTier;
 
-@SessionScoped
+@Dependent
 public class BitcoinProcessingThread implements Runnable, Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	@Inject
 	private transient Logger log;
 	
-	private final int incomingWindow = 100;
-	
-	// Ledgers mapped by incoming address
-	private Map<String, GameLedger> ledgers = new ConcurrentHashMap<String, GameLedger>();
-	
-	// Transactions mapped by incoming Bitcoin address
-	private Set<Transaction> ongoingTxs = new HashSet<Transaction>();
-	private Transaction newestTx = null;
-	
-	private Integer pollInterval;
-	private AtomicBoolean isRunning;
-	private Thread thread;
+	@Inject
+	private GameManager gameMgr;
 	
 	@Inject
 	private PaymentWsConfigStore config;
@@ -52,6 +41,16 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 	@Inject
 	private BitcoinRpcClient bitcoin;
 	
+	private final int incomingWindow = 100;
+	
+	// Transactions mapped by incoming Bitcoin address
+	private Set<Transaction> ongoingTxs = new HashSet<Transaction>();
+	private Transaction newestTx = null;
+	
+	private Integer pollInterval;
+	private AtomicBoolean isRunning;
+	private Thread thread;
+	
 	public BitcoinProcessingThread() { }
 	
 	@PostConstruct
@@ -59,6 +58,7 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 		pollInterval = Integer.decode(config.getProperty(PaymentWsConfigStore.BitcoinPollInterval));
 		isRunning = new AtomicBoolean(true);
 		thread = new Thread(this);
+		log.info("Initializing processing thread.");
 		thread.start();
 	}
 	
@@ -66,14 +66,6 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 	public void uninit() {
 		isRunning.set(false);
 		thread.interrupt();
-	}
-	
-	public void createLedger(String gameAddress, GameLedger ledger) {
-		ledgers.put(gameAddress, ledger);
-	}
-	
-	public GameLedger getLedger(String gameAddress) {
-		return ledgers.get(gameAddress);
 	}
 	
 	public void run() {
@@ -154,11 +146,10 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 		return txBlock;
 	}
 	
-	
 	private Collection<Transaction> processIncomingTxs(Collection<Transaction> incomingTxs) {
 		for(Transaction tx : incomingTxs) {
 			String gameAddress = tx.getAddress();
-			GameLedger ledger = ledgers.get(gameAddress);
+			GameLedger ledger = gameMgr.getLedger(gameAddress);
 			// Only process transactions for which a payment ledger exists
 			if(ledger != null) {
 				// Lock on the ledger while updating its state based on the most recent transaction
@@ -198,7 +189,7 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 		// Check if the required number of confirmations have been reached
 		if(tx.getConfirmations() >= config.getConfig().getRequiredConfirmations()) {
 			// Look for the corresponding game and determine if winner should be paid
-			GameLedger ledger = ledgers.get(gameAddress);
+			GameLedger ledger = gameMgr.getLedger(gameAddress);
 			// If the ledger indicates the winner is waiting for payment, send the payment
 			if(ledger.getState() == GameLedgerState.OutgoingWinnerWaiting) {
 				// Separate the rake from the outgoing amount
@@ -209,7 +200,7 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 				// Retrieve the addresses/info to send to
 				String gameId = ledger.getGameId();
 				String playerId = ledger.getPlayerId();
-				String playerAddress = ledger.getPlayerAddress();
+				String playerAddress = ledger.getPayoutAddress();
 				String rakeAddress = config.getConfig().getRakeAddress();
 				
 				// Issue payment to the player and rake address
@@ -224,7 +215,7 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 		// Determine if the transaction is sufficient
 		if(amountReceived.compareTo(0.0) != 0) {
 			// Retrieve the information about the transaction
-			String gameAddress = ledger.getGameAddress();
+			String gameAddress = ledger.getWagerAddress();
 			String gameId = ledger.getGameId();
 			String playerId = ledger.getPlayerId();
 			String wagerTier = ledger.getWagerTier();
@@ -244,10 +235,6 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 			if(amountRequired.compareTo(amountReceived) == 0) {
 				log.info("Received correct amount from player: " + playerId);
 				
-				// Provide update to the WS client
-				PaymentWsCallback callbackSvc = finderServices.getService(ledger.getGameId());
-				callbackSvc.playerPaid(gameId, playerId, amountReceived);
-				
 				// Store the transaction
 				ongoingTxs.add(transaction);
 				
@@ -255,6 +242,16 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 				ledger.setState(GameLedgerState.IncomingReceived);
 				ledger.setIncomingAmount(amountReceived);
 				ledger.setIncomingReceivedDate(new Date());
+				
+				// Provide update to the WS client
+				PaymentWsCallback callbackSvc = finderServices.get(ledger.getGameId());
+				callbackSvc.playerPaid(gameId, playerId, amountReceived);
+				
+				// Determine if all players have paid
+				if(allPlayersHavePaid(gameId) == true) {
+					log.info("All players have paid for game: " + gameId);
+					callbackSvc.gameCanStart(gameId);
+				}
 			} else {
 				log.info("Did not receive correct amount, returning it back to the player.");
 				issueTxRefund(ledger, transaction.getAmount());
@@ -262,8 +259,32 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 		}
 	}
 	
+	public boolean allPlayersHavePaid(String gameId) {
+		Collection<GameLedger> ledgers = gameMgr.getLedgerCollection(gameId);
+		if(ledgers == null) {
+			return false;
+		}
+		
+		boolean allPaid = true;
+		// Look for any players that have waiting payments
+		for(GameLedger ledger : ledgers) {
+			if(ledger.getState() == GameLedgerState.IncomingWaiting) {
+				allPaid = false;
+				break;
+			}
+		}
+		
+		// Determine if the number of ledgers is greater or equal to the minimum required players
+		Game game = gameMgr.getGame(gameId);
+		if(ledgers.size() < game.getType().getMinPlayers()) {
+			allPaid = false;
+		}
+		
+		return allPaid;
+	}
+	
 	public void issueTxRefund(GameLedger ledger, Double amountReceived) {
-		String playerAddress = ledger.getPlayerAddress();
+		String playerAddress = ledger.getPayoutAddress();
 		String gameId = ledger.getGameId();
 		String playerId = ledger.getPlayerId();
 		log.info("Sending refund of " + amountReceived + " to " + playerAddress + " for game " + gameId);

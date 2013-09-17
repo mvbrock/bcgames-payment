@@ -31,7 +31,7 @@ public class CallbackServiceTracker implements Serializable {
 		serviceMap.put(gameId, service);
 	}
 	
-	public PaymentWsCallback getService(String gameId) {
+	public PaymentWsCallback get(String gameId) {
 		return serviceMap.get(gameId);
 	}
 }
