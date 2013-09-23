@@ -1,4 +1,4 @@
-package org.mvbrock.bcgames.payment.ws.interfaces;
+package org.mvbrock.bcgames.payment.rs.interfaces;
 
 import java.util.List;
 
@@ -11,7 +11,7 @@ import org.mvbrock.bcgames.payment.model.GameType;
 import org.mvbrock.bcgames.payment.model.WagerTier;
 
 @Path("/payment-callback")
-public interface PaymentWsCallback {
+public interface PaymentCallback {
 	@POST
 	@Path("/update/wagertiers")
 	@Consumes("application/json")

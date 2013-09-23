@@ -1,4 +1,4 @@
-package org.mvbrock.bcgames.payment.ws;
+package org.mvbrock.bcgames.payment.rs;
 
 import java.io.Serializable;
 
@@ -8,7 +8,7 @@ import org.mvbrock.bcgames.common.config.ConfigStore;
 
 
 @ApplicationScoped
-public class PaymentWsConfigStore extends ConfigStore<PaymentWsConfig> implements Serializable {
+public class PaymentConfigStore extends ConfigStore<PaymentConfig> implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	public static final String BitcoinUrl = "bitcoin.url";
@@ -16,10 +16,10 @@ public class PaymentWsConfigStore extends ConfigStore<PaymentWsConfig> implement
 	public static final String BitcoinPassword = "bitcoin.password";
 	public static final String BitcoinPollInterval = "bitcoin.pollInterval";
 	
-	public PaymentWsConfigStore() { }
+	public PaymentConfigStore() { }
 
 	@Override
-	protected Class<PaymentWsConfig> getConfigType() {
-		return PaymentWsConfig.class;
+	protected Class<PaymentConfig> getConfigType() {
+		return PaymentConfig.class;
 	}
 }

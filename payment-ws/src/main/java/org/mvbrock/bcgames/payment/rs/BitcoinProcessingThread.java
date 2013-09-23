@@ -1,10 +1,9 @@
-package org.mvbrock.bcgames.payment.ws;
+package org.mvbrock.bcgames.payment.rs;
 
 import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -14,15 +13,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import org.apache.log4j.Logger;
-import org.mvbrock.bcgames.payment.ws.interfaces.PaymentWsCallback;
+import org.mvbrock.bcgames.payment.rs.interfaces.PaymentCallback;
 import org.mvbrock.bcgames.payment.model.Game;
 import org.mvbrock.bcgames.payment.model.WagerTier;
 
-@Dependent
+@Singleton
 public class BitcoinProcessingThread implements Runnable, Serializable {
 	private static final long serialVersionUID = 1L;
 	
@@ -30,10 +29,10 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 	private transient Logger log;
 	
 	@Inject
-	private GameManager gameMgr;
+	private GameStore gameMgr;
 	
 	@Inject
-	private PaymentWsConfigStore config;
+	private PaymentConfigStore config;
 	
 	@Inject
 	private CallbackServiceTracker finderServices;
@@ -44,7 +43,7 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 	private final int incomingWindow = 100;
 	
 	// Transactions mapped by incoming Bitcoin address
-	private Set<Transaction> ongoingTxs = new HashSet<Transaction>();
+	private Set<Ledger> ongoingLedgers = new HashSet<Ledger>();
 	private Transaction newestTx = null;
 	
 	private Integer pollInterval;
@@ -55,10 +54,10 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 	
 	@PostConstruct
 	public void init() {
-		pollInterval = Integer.decode(config.getProperty(PaymentWsConfigStore.BitcoinPollInterval));
+		pollInterval = Integer.decode(config.getProperty(PaymentConfigStore.BitcoinPollInterval));
 		isRunning = new AtomicBoolean(true);
 		thread = new Thread(this);
-		log.info("Initializing processing thread.");
+		log.info("Initializing processing thread with polling interval: " + pollInterval);
 		thread.start();
 	}
 	
@@ -69,18 +68,20 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 	}
 	
 	public void run() {
-		log.info("Bitcoin client polling interval: " + pollInterval);
-		
 		log.info("Starting Bitcoin processing thread");
 		while(isRunning.get() == true) {
 			// Retrieve the incoming transactions
-			Collection<Transaction> incomingTxs = retrieveIncoming();
+			Collection<Transaction> incomingTxs = retrieveIncomingTxs();
 			
-			// Process the incoming transactions
-			processIncomingTxs(incomingTxs);
+			// Process the valid incoming transactions
+			Collection<Ledger> incomingLedgers = processIncomingTxs(incomingTxs);
 				
 			// Check existing transaction confirmations for payout
-			processOngoingTxs();
+			processIncomingLedgers(incomingLedgers);
+			
+			// Process all of the ongoing ledgers
+			ongoingLedgers.addAll(incomingLedgers);
+			processOngoingLedgers(ongoingLedgers);
 			
 			try {
 				Thread.sleep(pollInterval);
@@ -91,7 +92,7 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 		log.info("Stopping Bitcoin processing thread");
 	}
 	
-	private Collection<Transaction> retrieveIncoming() {
+	private Collection<Transaction> retrieveIncomingTxs() {
 		log.debug("Retrieving incoming transactions.");
 		
 		List<Transaction> incomingTxs = new LinkedList<Transaction>();
@@ -146,52 +147,102 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 		return txBlock;
 	}
 	
-	private Collection<Transaction> processIncomingTxs(Collection<Transaction> incomingTxs) {
+	private Collection<Ledger> processIncomingTxs(Collection<Transaction> incomingTxs) {
+		Set<Ledger> validIncomingLedgers =  new HashSet<Ledger>();
 		for(Transaction tx : incomingTxs) {
-			String gameAddress = tx.getAddress();
-			GameLedger ledger = gameMgr.getLedger(gameAddress);
-			// Only process transactions for which a payment ledger exists
-			if(ledger != null) {
-				// Lock on the ledger while updating its state based on the most recent transaction
-				synchronized(ledger) {
-					switch(ledger.getState()) {
-						case IncomingWaiting:
-							// Only process incoming transactions if the ledger is waiting
-							processValidIncoming(ledger, tx);
-							break;
-						default:
-							// Issue automatic refund for any incoming transaction on a non-waiting ledger
-							issueTxRefund(ledger, tx.getAmount());
-							break;
-					}
-				}
+			String wagerAddress = tx.getAddress();
+			Ledger ledger = gameMgr.getLedger(wagerAddress);
+			boolean isValid = validateIncomingTx(ledger, tx);
+			if(isValid == true) {
+				validIncomingLedgers.add(ledger);
 			}
 		}
-		return ongoingTxs;
+		return validIncomingLedgers;
 	}
 	
-	private void processOngoingTxs() {
-		for(Transaction tx : ongoingTxs) {
-			processOngoingTx(tx);
+	private boolean validateIncomingTx(Ledger ledger, Transaction tx) {
+		// Ensure the ledger exists
+		if(ledger == null) {
+			return false;
+		}
+		
+		// Retrieve the information about the transaction
+		Double amountReceived = tx.getAmount();
+		String gameAddress = ledger.getWagerAddress();
+		String gameId = ledger.getGameId();
+		String playerId = ledger.getPlayerId();
+		String wagerTier = ledger.getWagerTier();
+		
+		// Ensure the ledger is in a valid state
+		if(ledger.getIncomingState() != LedgerIncomingState.IncomingWaiting) {
+			log.info("Received payment for a non-waiting ledger, issuing refund to player: " + playerId);
+			issueTxRefund(ledger, tx.getAmount());
+			return false;
+		}
+		
+		// Retrieve information about the associated wager
+		WagerTier wager = config.getConfig().getWagerTiers().get(wagerTier);
+		Double amountRequired = wager.getAmount();
+		
+		DecimalFormat amountFormatter = new DecimalFormat("#.########");
+		log.info("Received payment from player: " + playerId + "\n" +
+				"\tBitcoin Address: " + gameAddress + "\n" +
+				"\tGame ID: " + gameId + "\n" +
+				"\tWager Tier: " + wagerTier + "\n" +
+				"\tAmount Required: " + amountFormatter.format(amountRequired) + "\n" +
+				"\tAmount Received: " + amountFormatter.format(amountReceived));
+		
+		// Ensure the correct amount was received
+		if(amountRequired.compareTo(amountReceived) != 0) {
+			log.info("Did not receive correct amount, returning it back to the player.");
+			issueTxRefund(ledger, tx.getAmount());
+			return false;
+		}
+		
+		return true;
+	}
+	
+	private void processIncomingLedgers(Collection<Ledger> incomingLedgers) {
+		for(Ledger ledger : incomingLedgers) {
+			String gameId = ledger.getGameId();
+			String playerId = ledger.getPlayerId();
+			log.info("Received correct amount from player: " + playerId);
+			
+			// Update the ledger
+			ledger.setIncomingState(LedgerIncomingState.IncomingReceived);
+			
+			// Provide update to the WS client
+			PaymentCallback callbackSvc = finderServices.get(gameId);
+			callbackSvc.playerPaid(gameId, playerId, ledger.getIncomingTx().getAmount());
+			
+			// Determine if all players have paid
+			if(allPlayersHavePaid(gameId) == true) {
+				log.info("All players have paid for game: " + gameId);
+				callbackSvc.gameCanStart(gameId);
+			}
 		}
 	}
 	
-	private void processOngoingTx(Transaction tx) {
-		String gameAddress = tx.getAddress();
-		Transaction updatedTransaction = bitcoin.gettransaction(tx.getTxid());
+	private void processOngoingLedgers(Collection<Ledger> ongoingLedgers) {
+		for(Ledger ledger : ongoingLedgers) {
+			processOngoingTx(ledger);
+		}
+	}
+	
+	private void processOngoingTx(Ledger ledger) {
+		Transaction incomingTx = ledger.getIncomingTx();
+		Transaction updatedIncomingTx = bitcoin.gettransaction(incomingTx.getTxid());
 		
 		// Update the confirmation count if it has increased
-		if(updatedTransaction.getConfirmations() > tx.getConfirmations()) {
-			tx = updatedTransaction;
-			ongoingTxs.add(updatedTransaction);
+		if(updatedIncomingTx.getConfirmations() > incomingTx.getConfirmations()) {
+			incomingTx = updatedIncomingTx;
+			ledger.setIncomingTx(updatedIncomingTx);
 		}
 		
 		// Check if the required number of confirmations have been reached
-		if(tx.getConfirmations() >= config.getConfig().getRequiredConfirmations()) {
-			// Look for the corresponding game and determine if winner should be paid
-			GameLedger ledger = gameMgr.getLedger(gameAddress);
+		if(incomingTx.getConfirmations() >= config.getConfig().getRequiredConfirmations()) {
 			// If the ledger indicates the winner is waiting for payment, send the payment
-			if(ledger.getState() == GameLedgerState.OutgoingWinnerWaiting) {
+			if(ledger.getOutgoingState() == LedgerOutgoingState.OutgoingWinnerWaiting) {
 				// Separate the rake from the outgoing amount
 				Double payout = ledger.getOutgoingAmount();
 				Double rake = payout * config.getConfig().getRake();
@@ -210,65 +261,16 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 		}
 	}
 	
-	private void processValidIncoming(GameLedger ledger, Transaction transaction) {
-		Double amountReceived = transaction.getAmount();
-		// Determine if the transaction is sufficient
-		if(amountReceived.compareTo(0.0) != 0) {
-			// Retrieve the information about the transaction
-			String gameAddress = ledger.getWagerAddress();
-			String gameId = ledger.getGameId();
-			String playerId = ledger.getPlayerId();
-			String wagerTier = ledger.getWagerTier();
-			
-			WagerTier wager = config.getConfig().getWagerTiers().get(wagerTier);
-			Double amountRequired = wager.getAmount();
-			
-			DecimalFormat amountFormatter = new DecimalFormat("#.########");
-			log.info("Received payment from player: " + playerId + "\n" +
-					"\tBitcoin Address: " + gameAddress + "\n" +
-					"\tGame ID: " + gameId + "\n" +
-					"\tWager Tier: " + wagerTier + "\n" +
-					"\tAmount Required: " + amountFormatter.format(amountRequired) + "\n" +
-					"\tAmount Received: " + amountFormatter.format(amountReceived));
-			
-			// Compare the amount received to the amount expected
-			if(amountRequired.compareTo(amountReceived) == 0) {
-				log.info("Received correct amount from player: " + playerId);
-				
-				// Store the transaction
-				ongoingTxs.add(transaction);
-				
-				// Update the ledger
-				ledger.setState(GameLedgerState.IncomingReceived);
-				ledger.setIncomingAmount(amountReceived);
-				ledger.setIncomingReceivedDate(new Date());
-				
-				// Provide update to the WS client
-				PaymentWsCallback callbackSvc = finderServices.get(ledger.getGameId());
-				callbackSvc.playerPaid(gameId, playerId, amountReceived);
-				
-				// Determine if all players have paid
-				if(allPlayersHavePaid(gameId) == true) {
-					log.info("All players have paid for game: " + gameId);
-					callbackSvc.gameCanStart(gameId);
-				}
-			} else {
-				log.info("Did not receive correct amount, returning it back to the player.");
-				issueTxRefund(ledger, transaction.getAmount());
-			}
-		}
-	}
-	
 	public boolean allPlayersHavePaid(String gameId) {
-		Collection<GameLedger> ledgers = gameMgr.getLedgerCollection(gameId);
+		Collection<Ledger> ledgers = gameMgr.getLedgerCollection(gameId);
 		if(ledgers == null) {
 			return false;
 		}
 		
 		boolean allPaid = true;
 		// Look for any players that have waiting payments
-		for(GameLedger ledger : ledgers) {
-			if(ledger.getState() == GameLedgerState.IncomingWaiting) {
+		for(Ledger ledger : ledgers) {
+			if(ledger.getIncomingState() == LedgerIncomingState.IncomingWaiting) {
 				allPaid = false;
 				break;
 			}
@@ -283,7 +285,7 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 		return allPaid;
 	}
 	
-	public void issueTxRefund(GameLedger ledger, Double amountReceived) {
+	public void issueTxRefund(Ledger ledger, Double amountReceived) {
 		String playerAddress = ledger.getPayoutAddress();
 		String gameId = ledger.getGameId();
 		String playerId = ledger.getPlayerId();

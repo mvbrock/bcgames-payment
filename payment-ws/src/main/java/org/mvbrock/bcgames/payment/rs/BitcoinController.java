@@ -1,4 +1,4 @@
-package org.mvbrock.bcgames.payment.ws;
+package org.mvbrock.bcgames.payment.rs;
 
 import java.io.Serializable;
 
@@ -24,32 +24,32 @@ public class BitcoinController implements Serializable {
 	private BitcoinProcessingThread bcProcessing;
 	
 	@Inject
-	private PaymentWsConfigStore config;
+	private PaymentConfigStore config;
 	
 	@Inject
-	private GameManager gameMgr;
+	private GameStore gameMgr;
 	
 	public BitcoinController() { }
 
 	public void queueWinnerPayout(Game game) {
 		Player winner = game.getWinner();
 		String winnerWagerAddress = winner.getWagerAddress();
-		GameLedger winningLedger = gameMgr.getLedger(winnerWagerAddress);
+		Ledger winningLedger = gameMgr.getLedger(winnerWagerAddress);
 		
 		// Initialize the payout with the original incoming amount from the player
-		Double payoutAmount = winningLedger.getIncomingAmount();
+		Double payoutAmount = winningLedger.getIncomingTx().getAmount();
 		
 		for(Player loser : game.getLoserCollection()) {
 			// Retrieve the losing ledger
 			String loserWagerAddress = loser.getWagerAddress();
-			GameLedger losingLedger = gameMgr.getLedger(loserWagerAddress);
+			Ledger losingLedger = gameMgr.getLedger(loserWagerAddress);
 			
 			// Add the incoming amount from the losing ledger to the payout
-			payoutAmount += losingLedger.getIncomingAmount();
+			payoutAmount += losingLedger.getIncomingTx().getAmount();
 		}
 		
 		// Update the winning ledger with the final payout amount
-		winningLedger.setState(GameLedgerState.OutgoingWinnerWaiting);
+		winningLedger.setOutgoingState(LedgerOutgoingState.OutgoingWinnerWaiting);
 		winningLedger.setOutgoingAmount(payoutAmount);
 	}
 	
@@ -59,8 +59,8 @@ public class BitcoinController implements Serializable {
 		String wagerAddress = player.getWagerAddress();
 		
 		// Retrieve the ledger and the original amount received
-		GameLedger ledger = gameMgr.getLedger(wagerAddress);
-		Double amountReceived = ledger.getIncomingAmount();
+		Ledger ledger = gameMgr.getLedger(wagerAddress);
+		Double amountReceived = ledger.getIncomingTx().getAmount();
 		
 		// Issue the refund
 		bcProcessing.issueTxRefund(ledger, amountReceived);
@@ -68,9 +68,8 @@ public class BitcoinController implements Serializable {
 	
 	public String generateWagerAddress(Game game, String playerId) {
 		String wagerAddress = bitcoin.getnewaddress();
-		String playerAddress = game.getPlayer(playerId).getPayoutAddress();
-		GameLedger ledger = new GameLedger(game.getId(), playerId, GameLedgerState.IncomingWaiting,
-				game.getTier().getId(), playerAddress, wagerAddress);
+		String payoutAddress = game.getPlayer(playerId).getPayoutAddress();
+		Ledger ledger = new Ledger(game.getId(), playerId, game.getTier().getId(), payoutAddress, wagerAddress);
 		gameMgr.addLedger(wagerAddress, ledger);
 		return wagerAddress;
 	}

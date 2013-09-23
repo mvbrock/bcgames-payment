@@ -1,4 +1,4 @@
-package org.mvbrock.bcgames.payment.ws;
+package org.mvbrock.bcgames.payment.rs;
 
 import java.util.Map;
 
@@ -7,7 +7,7 @@ import org.mvbrock.bcgames.payment.model.WagerTier;
 
 import org.mvbrock.bcgames.common.config.Config;
 
-public class PaymentWsConfig extends Config {
+public class PaymentConfig extends Config {
 	
 	protected Map<String, WagerTier> wagerTiers;
 	protected Map<String, GameType> gameTypes;
@@ -15,9 +15,9 @@ public class PaymentWsConfig extends Config {
 	protected Double rake;
 	protected String rakeAddress;
 	
-	public PaymentWsConfig() { }
+	public PaymentConfig() { }
 	
-	public PaymentWsConfig(
+	public PaymentConfig(
 			Map<String, WagerTier> wagerTiers,
 			Map<String, GameType> gameTypes,
 			String token,

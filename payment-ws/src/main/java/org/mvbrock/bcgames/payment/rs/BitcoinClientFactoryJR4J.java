@@ -1,4 +1,4 @@
-package org.mvbrock.bcgames.payment.ws;
+package org.mvbrock.bcgames.payment.rs;
 
 import java.io.Serializable;
 import java.net.Authenticator;
@@ -25,7 +25,7 @@ public class BitcoinClientFactoryJR4J implements BitcoinClientFactory, Serializa
 	private BitcoinRpcClient bcRpcClient = null;
 
 	@Inject
-	private PaymentWsConfigStore config;
+	private PaymentConfigStore config;
 	
 	public BitcoinClientFactoryJR4J() {
 		super();
@@ -41,11 +41,11 @@ public class BitcoinClientFactoryJR4J implements BitcoinClientFactory, Serializa
 		Authenticator.setDefault(new Authenticator() {
 			protected PasswordAuthentication getPasswordAuthentication() {
 				return new PasswordAuthentication(
-						config.getProperty(PaymentWsConfigStore.BitcoinUsername),
-						config.getProperty(PaymentWsConfigStore.BitcoinPassword).toCharArray());
+						config.getProperty(PaymentConfigStore.BitcoinUsername),
+						config.getProperty(PaymentConfigStore.BitcoinPassword).toCharArray());
 			}
 		});
-		String bcUrlStr = config.getProperty(PaymentWsConfigStore.BitcoinUrl);
+		String bcUrlStr = config.getProperty(PaymentConfigStore.BitcoinUrl);
 		log.info("Bitcoin client URL: " + bcUrlStr);
 		URL bcUrl = null;
 		JsonRpcHttpClient jsonRpcClient = null;

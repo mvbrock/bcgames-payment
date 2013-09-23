@@ -1,4 +1,4 @@
-package org.mvbrock.bcgames.payment.ws;
+package org.mvbrock.bcgames.payment.rs;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -9,8 +9,8 @@ import javax.enterprise.context.SessionScoped;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-import org.mvbrock.bcgames.payment.ws.interfaces.PaymentWsCallback;
-import org.mvbrock.bcgames.payment.ws.interfaces.PaymentWsService;
+import org.mvbrock.bcgames.payment.rs.interfaces.PaymentCallback;
+import org.mvbrock.bcgames.payment.rs.interfaces.PaymentService;
 import org.mvbrock.bcgames.payment.model.Game;
 import org.mvbrock.bcgames.payment.model.GameStatus;
 import org.mvbrock.bcgames.payment.model.GameType;
@@ -18,14 +18,14 @@ import org.mvbrock.bcgames.payment.model.Player;
 import org.mvbrock.bcgames.payment.model.WagerTier;
 
 @SessionScoped
-public class PaymentWsServiceImpl implements PaymentWsService, Serializable {
+public class PaymentServiceImpl implements PaymentService, Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Inject
 	private transient Logger log;
 	
 	@Inject
-	private PaymentWsConfigStore config;
+	private PaymentConfigStore config;
 
 	@Inject
 	private BitcoinController bitcoinCtl;
@@ -34,9 +34,9 @@ public class PaymentWsServiceImpl implements PaymentWsService, Serializable {
 	private CallbackServiceTracker callbackTracker;
 	
 	@Inject
-	private GameManager gameMgr;
+	private GameStore gameMgr;
 
-	public PaymentWsServiceImpl() { }
+	public PaymentServiceImpl() { }
 
 	@PostConstruct
 	public void init() { }
@@ -65,7 +65,7 @@ public class PaymentWsServiceImpl implements PaymentWsService, Serializable {
 				wagerAddress);
 		
 		// Return the generated address to the player
-		PaymentWsCallback callback = callbackTracker.get(gameId);
+		PaymentCallback callback = callbackTracker.get(gameId);
 		callback.updateWagerAddress(gameId, player.getId(), wagerAddress);
 		log.info("Provided player " + player.getId() + " with game address: " + wagerAddress);
 		

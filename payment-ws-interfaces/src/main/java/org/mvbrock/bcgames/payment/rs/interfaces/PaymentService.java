@@ -1,4 +1,4 @@
-package org.mvbrock.bcgames.payment.ws.interfaces;
+package org.mvbrock.bcgames.payment.rs.interfaces;
 
 import java.util.List;
 
@@ -16,7 +16,7 @@ import org.mvbrock.bcgames.payment.model.Player;
 import org.mvbrock.bcgames.payment.model.WagerTier;
 
 @Path("/payment")
-public interface PaymentWsService {
+public interface PaymentService {
 	@POST
 	@Path("/creategame")
 	@Consumes("application/json")

@@ -1,4 +1,4 @@
-package org.mvbrock.bcgames.payment.ws;
+package org.mvbrock.bcgames.payment.rs;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;  

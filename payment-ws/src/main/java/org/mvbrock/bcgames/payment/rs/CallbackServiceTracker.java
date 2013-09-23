@@ -1,4 +1,4 @@
-package org.mvbrock.bcgames.payment.ws;
+package org.mvbrock.bcgames.payment.rs;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -11,7 +11,7 @@ import org.apache.log4j.Logger;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
-import org.mvbrock.bcgames.payment.ws.interfaces.PaymentWsCallback;
+import org.mvbrock.bcgames.payment.rs.interfaces.PaymentCallback;
 
 @ApplicationScoped
 public class CallbackServiceTracker implements Serializable {
@@ -21,17 +21,17 @@ public class CallbackServiceTracker implements Serializable {
 	private transient Logger log;
 	
 	// Maps a game ID to callback service
-	private Map<String, PaymentWsCallback> serviceMap = new HashMap<String, PaymentWsCallback>();
+	private Map<String, PaymentCallback> serviceMap = new HashMap<String, PaymentCallback>();
 	
 	public void addClient(String gameId, String callbackUrl) {
 		log.info("Creating proxy client for Payment Callback WS URL: " + callbackUrl);
 		ResteasyClient restEasyClient = new ResteasyClientBuilder().build();
         ResteasyWebTarget target = restEasyClient.target(callbackUrl);
-		PaymentWsCallback service = target.proxy(PaymentWsCallback.class);
+		PaymentCallback service = target.proxy(PaymentCallback.class);
 		serviceMap.put(gameId, service);
 	}
 	
-	public PaymentWsCallback get(String gameId) {
+	public PaymentCallback get(String gameId) {
 		return serviceMap.get(gameId);
 	}
 }

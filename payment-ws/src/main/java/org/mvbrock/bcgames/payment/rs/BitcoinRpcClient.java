@@ -1,4 +1,4 @@
-package org.mvbrock.bcgames.payment.ws;
+package org.mvbrock.bcgames.payment.rs;
 
 public interface BitcoinRpcClient {
 	public GetInfo getinfo();

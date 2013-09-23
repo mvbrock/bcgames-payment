@@ -1,17 +1,17 @@
-package org.mvbrock.bcgames.payment.ws;
+package org.mvbrock.bcgames.payment.rs;
 
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Singleton;
 
 import org.mvbrock.bcgames.payment.model.Game;
 import org.mvbrock.bcgames.payment.model.Player;
 
-@ApplicationScoped
-public class GameManager implements Serializable {
+@Singleton
+public class GameStore implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	// Map game ID to game
@@ -19,11 +19,11 @@ public class GameManager implements Serializable {
 	// Maps wager address to players
 	private Map<String, Player> players = new ConcurrentHashMap<String, Player>();
 	// Maps game ID to a mapping of player IDs to game ledgers
-	private Map<String, Map<String, GameLedger>> ledgerSets = new ConcurrentHashMap<String, Map<String, GameLedger>>();
+	private Map<String, Map<String, Ledger>> ledgerSets = new ConcurrentHashMap<String, Map<String, Ledger>>();
 	// Maps player wager address to a game ledger
-	private Map<String, GameLedger> ledgers = new ConcurrentHashMap<String, GameLedger>();
+	private Map<String, Ledger> ledgers = new ConcurrentHashMap<String, Ledger>();
 	
-	public GameManager() { }
+	public GameStore() { }
 	
 	public void addGame(Game game) {
 		games.put(game.getId(), game);
@@ -37,13 +37,13 @@ public class GameManager implements Serializable {
 		players.put(wagerAddress, player);
 	}
 	
-	public void addLedger(String gameId, GameLedger ledger) {
+	public void addLedger(String gameId, Ledger ledger) {
 		// Add ledger to the game-to-ledger set map
-		Map<String, GameLedger> ledgerMap;
+		Map<String, Ledger> ledgerMap;
 		if(ledgerSets.containsKey(gameId) == true) {
 			ledgerMap = ledgerSets.get(gameId);
 		} else {
-			ledgerMap = new ConcurrentHashMap<String, GameLedger>();
+			ledgerMap = new ConcurrentHashMap<String, Ledger>();
 		}
 		ledgerMap.put(ledger.getPlayerId(), ledger);
 		ledgerSets.put(gameId, ledgerMap);
@@ -52,11 +52,11 @@ public class GameManager implements Serializable {
 		ledgers.put(ledger.getWagerAddress(), ledger);
 	}
 	
-	public GameLedger getLedger(String wagerAddress) {
+	public Ledger getLedger(String wagerAddress) {
 		return ledgers.get(wagerAddress);
 	}
 	
-	public Collection<GameLedger> getLedgerCollection(String gameId) {
+	public Collection<Ledger> getLedgerCollection(String gameId) {
 		if(ledgerSets.containsKey(gameId) == true) {
 			return ledgerSets.get(gameId).values();
 		} else {
