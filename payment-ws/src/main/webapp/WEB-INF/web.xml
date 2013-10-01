@@ -17,7 +17,7 @@
 
 	<context-param>
 		<param-name>resteasy.resources</param-name>
-		<param-value>org.mvbrock.bcgames.payment.ws.PaymentWsServiceImpl</param-value>
+		<param-value>org.mvbrock.bcgames.payment.rs.PaymentServiceImpl</param-value>
 	</context-param>
 
 	<context-param>

@@ -37,7 +37,7 @@
       "fastbutton":{
       	"id":"fastbutton",
       	"name":"Fast Button",
-      	"url":"http://localhost:8080/fastbutton",
+      	"url":"http://localhost:8080/fastbutton-game",
       	"minPlayers":2,
       	"maxPlayers":2
       }

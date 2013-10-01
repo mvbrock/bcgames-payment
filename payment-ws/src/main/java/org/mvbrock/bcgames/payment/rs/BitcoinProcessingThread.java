@@ -29,13 +29,13 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 	private transient Logger log;
 	
 	@Inject
-	private GameStore gameMgr;
+	private GameStore gameStore;
 	
 	@Inject
 	private PaymentConfigStore config;
 	
 	@Inject
-	private CallbackServiceTracker finderServices;
+	private CallbackServiceTracker callbackTracker;
 	
 	@Inject
 	private BitcoinRpcClient bitcoin;
@@ -151,7 +151,7 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 		Set<Ledger> validIncomingLedgers =  new HashSet<Ledger>();
 		for(Transaction tx : incomingTxs) {
 			String wagerAddress = tx.getAddress();
-			Ledger ledger = gameMgr.getLedger(wagerAddress);
+			Ledger ledger = gameStore.getLedger(wagerAddress);
 			boolean isValid = validateIncomingTx(ledger, tx);
 			if(isValid == true) {
 				validIncomingLedgers.add(ledger);
@@ -165,6 +165,9 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 		if(ledger == null) {
 			return false;
 		}
+		
+		// Store the new TX in the ledger
+		ledger.setIncomingTx(tx);
 		
 		// Retrieve the information about the transaction
 		Double amountReceived = tx.getAmount();
@@ -206,30 +209,60 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 		for(Ledger ledger : incomingLedgers) {
 			String gameId = ledger.getGameId();
 			String playerId = ledger.getPlayerId();
-			log.info("Received correct amount from player: " + playerId);
+			log.info("Received correct amount from player " + playerId + " for game: " + gameId);
 			
 			// Update the ledger
 			ledger.setIncomingState(LedgerIncomingState.IncomingReceived);
 			
 			// Provide update to the WS client
-			PaymentCallback callbackSvc = finderServices.get(gameId);
-			callbackSvc.playerPaid(gameId, playerId, ledger.getIncomingTx().getAmount());
-			
-			// Determine if all players have paid
-			if(allPlayersHavePaid(gameId) == true) {
-				log.info("All players have paid for game: " + gameId);
-				callbackSvc.gameCanStart(gameId);
+			PaymentCallback callbackSvc = callbackTracker.get(gameId);
+			if(callbackSvc != null) {
+				callbackSvc.playerPaid(gameId, playerId, ledger.getIncomingTx().getAmount());
+				
+				// Determine if all players have paid
+				if(allPlayersHavePaid(gameId) == true) {
+					log.info("All players have paid for game: " + gameId);
+					callbackSvc.gameCanStart(gameId);
+				}
+			} else {
+				log.error("No callback client in the callback tracker for game: " + gameId);
 			}
 		}
 	}
 	
+	public boolean allPlayersHavePaid(String gameId) {
+		Collection<Ledger> ledgers = gameStore.getLedgerCollection(gameId);
+		if(ledgers == null) {
+			log.error("No ledger set found for game: " + gameId);
+			return false;
+		}
+		
+		boolean allPaid = true;
+		// Look for any players that have waiting payments
+		for(Ledger ledger : ledgers) {
+			if(ledger.getIncomingState() == LedgerIncomingState.IncomingWaiting) {
+				log.info("Still waiting for payment from player " + ledger.getPlayerId() + " for game: " + gameId);
+				allPaid = false;
+			}
+		}
+		
+		// Determine if the number of ledgers is greater or equal to the minimum required players
+		Game game = gameStore.getGame(gameId);
+		final Integer minPlayers = game.getType().getMinPlayers();
+		if(ledgers.size() < minPlayers) {
+			log.info("Game currently has " + ledgers.size() + " players, requires at least " + minPlayers);
+			allPaid = false;
+		}
+		return allPaid;
+	}
+	
 	private void processOngoingLedgers(Collection<Ledger> ongoingLedgers) {
 		for(Ledger ledger : ongoingLedgers) {
-			processOngoingTx(ledger);
+			processOngoingLedger(ledger);
 		}
 	}
 	
-	private void processOngoingTx(Ledger ledger) {
+	private void processOngoingLedger(Ledger ledger) {
 		Transaction incomingTx = ledger.getIncomingTx();
 		Transaction updatedIncomingTx = bitcoin.gettransaction(incomingTx.getTxid());
 		
@@ -259,30 +292,6 @@ public class BitcoinProcessingThread implements Runnable, Serializable {
 				bitcoin.sendtoaddress(rakeAddress, rake, "type=rake, gameId=" + gameId + ", playerId=" + playerId);
 			}
 		}
-	}
-	
-	public boolean allPlayersHavePaid(String gameId) {
-		Collection<Ledger> ledgers = gameMgr.getLedgerCollection(gameId);
-		if(ledgers == null) {
-			return false;
-		}
-		
-		boolean allPaid = true;
-		// Look for any players that have waiting payments
-		for(Ledger ledger : ledgers) {
-			if(ledger.getIncomingState() == LedgerIncomingState.IncomingWaiting) {
-				allPaid = false;
-				break;
-			}
-		}
-		
-		// Determine if the number of ledgers is greater or equal to the minimum required players
-		Game game = gameMgr.getGame(gameId);
-		if(ledgers.size() < game.getType().getMinPlayers()) {
-			allPaid = false;
-		}
-		
-		return allPaid;
 	}
 	
 	public void issueTxRefund(Ledger ledger, Double amountReceived) {

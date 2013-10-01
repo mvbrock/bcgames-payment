@@ -27,14 +27,14 @@ public class BitcoinController implements Serializable {
 	private PaymentConfigStore config;
 	
 	@Inject
-	private GameStore gameMgr;
+	private GameStore gameStore;
 	
 	public BitcoinController() { }
 
 	public void queueWinnerPayout(Game game) {
 		Player winner = game.getWinner();
 		String winnerWagerAddress = winner.getWagerAddress();
-		Ledger winningLedger = gameMgr.getLedger(winnerWagerAddress);
+		Ledger winningLedger = gameStore.getLedger(winnerWagerAddress);
 		
 		// Initialize the payout with the original incoming amount from the player
 		Double payoutAmount = winningLedger.getIncomingTx().getAmount();
@@ -42,7 +42,7 @@ public class BitcoinController implements Serializable {
 		for(Player loser : game.getLoserCollection()) {
 			// Retrieve the losing ledger
 			String loserWagerAddress = loser.getWagerAddress();
-			Ledger losingLedger = gameMgr.getLedger(loserWagerAddress);
+			Ledger losingLedger = gameStore.getLedger(loserWagerAddress);
 			
 			// Add the incoming amount from the losing ledger to the payout
 			payoutAmount += losingLedger.getIncomingTx().getAmount();
@@ -59,7 +59,7 @@ public class BitcoinController implements Serializable {
 		String wagerAddress = player.getWagerAddress();
 		
 		// Retrieve the ledger and the original amount received
-		Ledger ledger = gameMgr.getLedger(wagerAddress);
+		Ledger ledger = gameStore.getLedger(wagerAddress);
 		Double amountReceived = ledger.getIncomingTx().getAmount();
 		
 		// Issue the refund
@@ -67,10 +67,11 @@ public class BitcoinController implements Serializable {
 	}
 	
 	public String generateWagerAddress(Game game, String playerId) {
-		String wagerAddress = bitcoin.getnewaddress();
-		String payoutAddress = game.getPlayer(playerId).getPayoutAddress();
-		Ledger ledger = new Ledger(game.getId(), playerId, game.getTier().getId(), payoutAddress, wagerAddress);
-		gameMgr.addLedger(wagerAddress, ledger);
+		final String wagerAddress = bitcoin.getnewaddress();
+		final String payoutAddress = game.getPlayer(playerId).getPayoutAddress();
+		final String gameId = game.getId();
+		Ledger ledger = new Ledger(gameId, playerId, game.getTier().getId(), payoutAddress, wagerAddress);
+		gameStore.addLedger(gameId, ledger);
 		return wagerAddress;
 	}
 }
