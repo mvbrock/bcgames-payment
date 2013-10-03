@@ -28,7 +28,7 @@ public class PaymentServiceImpl implements PaymentService, Serializable {
 	private PaymentConfigStore config;
 
 	@Inject
-	private BitcoinController bitcoinCtl;
+	private BitcoinProcessingThread bitcoinProcessing;
 
 	@Inject
 	private CallbackServiceTracker callbackTracker;
@@ -59,7 +59,7 @@ public class PaymentServiceImpl implements PaymentService, Serializable {
 		Game game = gameMgr.getGame(gameId);
 		game.addPlayer(player);
 		
-		String wagerAddress = bitcoinCtl.generateWagerAddress(game, player.getId());
+		String wagerAddress = bitcoinProcessing.generateWagerAddress(game, player.getId());
 		player.setWagerAddress(wagerAddress);
 		log.info("Waiting for incoming payment from player " + player.getId() + " on Bitcoin address: " +
 				wagerAddress);
@@ -79,7 +79,7 @@ public class PaymentServiceImpl implements PaymentService, Serializable {
 		switch(game.getStatus()) {
 			case Created:
 				// Issue a refund to the player if the game hasn't started yet
-				bitcoinCtl.issueRefund(game, playerId);
+				bitcoinProcessing.issueRefund(game, playerId);
 				game.removePlayer(playerId);
 				break;
 			case Started:
@@ -110,7 +110,7 @@ public class PaymentServiceImpl implements PaymentService, Serializable {
 	
 	public void payWinner(String gameId) {
 		Game game = gameMgr.getGame(gameId);
-		bitcoinCtl.queueWinnerPayout(game);
+		bitcoinProcessing.queueWinnerPayout(game);
 	}
 
 	public List<WagerTier> getWagerTiers() {
