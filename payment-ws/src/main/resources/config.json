@@ -30,14 +30,14 @@
       "orbitalwars":{
          "id":"orbitalwars",
          "name":"Orbital Wars",
-         "url":"http://localhost:8080/orbitalwars",
+         "url":"http://172.16.235.129:8080/orbitalwars",
          "minPlayers":2,
          "maxPlayers":2
       },
       "fastbutton":{
       	"id":"fastbutton",
       	"name":"Fast Button",
-      	"url":"http://localhost:8080/fastbutton-game",
+      	"url":"http://172.16.235.129:8080/fastbutton-game",
       	"minPlayers":2,
       	"maxPlayers":2
       }
