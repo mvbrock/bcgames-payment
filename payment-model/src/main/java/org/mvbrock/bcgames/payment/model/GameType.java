@@ -3,9 +3,7 @@ package org.mvbrock.bcgames.payment.model;
 import org.jboss.errai.common.client.api.annotations.Portable;
 
 @Portable
-public class GameType {
-	private String id;
-	private String name;
+public class GameType extends GameDescriptor {
 	private String url;
 	private Integer minPlayers;
 	private Integer maxPlayers;
@@ -13,19 +11,10 @@ public class GameType {
 	public GameType() { }
 	
 	public GameType(String id, String name, String url, Integer minPlayers, Integer maxPlayers) {
-		this.id = id;
-		this.name = name;
+		super(id, name);
 		this.url = url;
 		this.minPlayers = minPlayers;
 		this.maxPlayers = maxPlayers;
-	}
-
-	public String getId() {
-		return id;
-	}
-
-	public String getName() {
-		return name;
 	}
 	
 	public String getUrl() {
