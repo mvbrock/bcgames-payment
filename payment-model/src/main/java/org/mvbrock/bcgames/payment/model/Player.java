@@ -23,7 +23,7 @@ public class Player {
 	public String getId() {
 		return id;
 	}
-
+	
 	public String getPayoutAddress() {
 		return payoutAddress;
 	}
